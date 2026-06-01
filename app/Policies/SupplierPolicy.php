@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\CostCenter;
+use App\Models\Supplier;
 use App\Models\User;
 
-class CostCenterPolicy
+class SupplierPolicy
 {
     public function before(User $user, string $ability): bool|null
     {
@@ -25,7 +25,7 @@ class CostCenterPolicy
         return $user->isBuyerOrAdmin();
     }
 
-    public function update(User $user, CostCenter $costCenter): bool
+    public function update(User $user, Supplier $supplier): bool
     {
         return $user->isBuyerOrAdmin();
     }

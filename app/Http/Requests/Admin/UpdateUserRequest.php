@@ -26,8 +26,9 @@ class UpdateUserRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Checkbox não enviado = desmarcado
-        $this->merge(['isActive' => $this->boolean('isActive')]);
+        if ($this->has('isActive')) {
+            $this->merge(['isActive' => $this->boolean('isActive')]);
+        }
     }
 
     public function attributes(): array

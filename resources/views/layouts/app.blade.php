@@ -281,33 +281,28 @@
         </a>
 
         @if(auth()->user()->isBuyerOrAdmin())
-        <a href="#"
+        <a href="{{ route('suppliers.index') }}"
            class="cs-nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
             <i class="bi bi-truck"></i> Fornecedores
         </a>
         @endif
 
+        @if(auth()->user()->isBuyerOrAdmin())
+        <a href="{{ route('admin.costCenters.index') }}"
+           class="cs-nav-link {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
+            <i class="bi bi-building"></i> Centros de Custo
+        </a>
+        <a href="#"
+           class="cs-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+            <i class="bi bi-bar-chart"></i> Relatórios
+        </a>
+        @endif
+
         @if(auth()->user()->isAdmin())
-        <div class="cs-dropdown"
-             x-data="{ open: false, t: null }"
-             @mouseenter="clearTimeout(t); open = true; $el.querySelector('.cs-dropdown-menu').classList.add('open')"
-             @mouseleave="t = setTimeout(() => { open = false; $el.querySelector('.cs-dropdown-menu').classList.remove('open') }, 200)">
-            <span class="cs-nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" style="cursor:pointer">
-                <i class="bi bi-gear"></i> Admin <i class="bi bi-chevron-down" style="font-size:11px"></i>
-            </span>
-            <div class="cs-dropdown-menu" style="padding-top:10px">
-                <a href="{{ route('admin.users.index') }}" class="cs-dropdown-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i> Usuários
-                </a>
-                <a href="{{ route('admin.costCenters.index') }}" class="cs-dropdown-item {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
-                    <i class="bi bi-building"></i> Centros de Custo
-                </a>
-                <div class="cs-dropdown-divider"></div>
-                <a href="#" class="cs-dropdown-item">
-                    <i class="bi bi-bar-chart"></i> Relatórios
-                </a>
-            </div>
-        </div>
+        <a href="{{ route('admin.users.index') }}"
+           class="cs-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            <i class="bi bi-people"></i> Usuários
+        </a>
         @endif
     </nav>
 
@@ -393,6 +388,18 @@
         }
         input.value = v;
     }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        setTimeout(() => {
+            form.querySelectorAll('input, select, textarea, button').forEach(el => {
+                el.disabled = true;
+            });
+            form.querySelectorAll('[type="submit"]').forEach(btn => {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Salvando…';
+            });
+        }, 0);
+    });
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const apiFetch = (url, options = {}) => fetch(url, {

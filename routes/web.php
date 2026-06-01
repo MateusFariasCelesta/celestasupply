@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -17,6 +18,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Suppliers (buyer + admin)
+    Route::resource('suppliers', SupplierController::class)->except(['show', 'destroy']);
 
     // Admin
     Route::prefix('admin')->name('admin.')->group(function () {

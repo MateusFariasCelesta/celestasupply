@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateCostCenterRequest extends FormRequest
+class UpdateSupplierRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,6 +15,7 @@ class UpdateCostCenterRequest extends FormRequest
     {
         return [
             'name'     => ['required', 'string', 'max:255'],
+            'contact'  => ['nullable', 'string', 'max:255'],
             'isActive' => ['sometimes', 'boolean'],
         ];
     }
@@ -29,7 +30,8 @@ class UpdateCostCenterRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'nome',
+            'name'    => 'nome',
+            'contact' => 'contato',
         ];
     }
 }
