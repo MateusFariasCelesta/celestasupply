@@ -1,47 +1,203 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — CelestaSupply</title>
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+    <style>
+        body {
+            background: #0F2044;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        .login-wrap {
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+        }
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+        .login-brand {
+            text-align: center;
+            margin-bottom: 32px;
+        }
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        .login-brand i {
+            font-size: 36px;
+            color: #3B82F6;
+        }
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+        .login-brand h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            margin: 10px 0 4px;
+        }
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+        .login-brand p {
+            font-size: 13px;
+            color: rgba(255,255,255,.45);
+            margin: 0;
+        }
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+        .login-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .form-control:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+        }
+
+        .input-group-text {
+            background: #F9FAFB;
+            border: 1.5px solid #E5E7EB;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            color: #9CA3AF;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .btn-login {
+            background: #0F2044;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            width: 100%;
+            transition: background .15s;
+        }
+
+        .btn-login:hover { background: #3B82F6; color: #fff; }
+
+        .form-check-input:checked { background-color: #3B82F6; border-color: #3B82F6; }
+
+        .alert-danger {
+            background: #FEE2E2;
+            border: none;
+            border-left: 4px solid #EF4444;
+            color: #991B1B;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 10px 14px;
+        }
+
+        .link-forgot {
+            font-size: 12px;
+            color: #6B7280;
+            text-decoration: none;
+        }
+
+        .link-forgot:hover { color: #3B82F6; }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrap">
+    <div class="login-brand">
+        <i class="bi bi-box-seam-fill"></i>
+        <h1>CelestaSupply</h1>
+        <p>Sistema de Solicitação de Suprimentos</p>
+    </div>
+
+    <div class="login-card">
+
+        @if($errors->any())
+            <div class="alert-danger mb-4">
+                <i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
+
+            <div class="mb-4">
+                <label for="email" class="form-label">E-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input id="email" type="email" name="email"
+                           class="form-control"
+                           value="{{ old('email') }}"
+                           placeholder="seu@email.com"
+                           required autofocus>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="password" class="form-label mb-0">Senha</label>
+                    @if(Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="link-forgot">
+                            Esqueceu a senha?
+                        </a>
+                    @endif
+                </div>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input id="password" type="password" name="password"
+                           class="form-control"
+                           placeholder="••••••••"
+                           required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember" style="font-size:13px; color:#6B7280">
+                        Lembrar-me neste dispositivo
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+            </button>
+        </form>
+    </div>
+
+    <div class="login-footer">
+        Não tem conta? Solicite acesso ao administrador.
+    </div>
+</div>
+
+</body>
+</html>
