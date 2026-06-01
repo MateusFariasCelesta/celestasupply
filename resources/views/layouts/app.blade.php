@@ -94,7 +94,7 @@
         .cs-dropdown-menu {
             display: none;
             position: absolute;
-            top: calc(100% + 10px);
+            top: 100%;
             left: 0;
             background: #1E2D45;
             border: 1px solid rgba(255,255,255,.08);
@@ -104,7 +104,7 @@
             box-shadow: 0 8px 24px rgba(0,0,0,.3);
         }
 
-        .cs-dropdown:hover .cs-dropdown-menu { display: block; }
+        .cs-dropdown-menu.open { display: block; }
 
         .cs-dropdown-item {
             display: flex;
@@ -288,15 +288,18 @@
         @endif
 
         @if(auth()->user()->isAdmin())
-        <div class="cs-dropdown">
+        <div class="cs-dropdown"
+             x-data="{ open: false, t: null }"
+             @mouseenter="clearTimeout(t); open = true; $el.querySelector('.cs-dropdown-menu').classList.add('open')"
+             @mouseleave="t = setTimeout(() => { open = false; $el.querySelector('.cs-dropdown-menu').classList.remove('open') }, 200)">
             <span class="cs-nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" style="cursor:pointer">
                 <i class="bi bi-gear"></i> Admin <i class="bi bi-chevron-down" style="font-size:11px"></i>
             </span>
-            <div class="cs-dropdown-menu">
+            <div class="cs-dropdown-menu" style="padding-top:10px">
                 <a href="{{ route('admin.users.index') }}" class="cs-dropdown-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="bi bi-people"></i> Usuários
                 </a>
-                <a href="#" class="cs-dropdown-item">
+                <a href="{{ route('admin.costCenters.index') }}" class="cs-dropdown-item {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
                     <i class="bi bi-building"></i> Centros de Custo
                 </a>
                 <div class="cs-dropdown-divider"></div>

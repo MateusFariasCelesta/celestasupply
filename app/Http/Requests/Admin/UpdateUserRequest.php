@@ -20,7 +20,14 @@ class UpdateUserRequest extends FormRequest
             'password'       => ['nullable', 'string', 'min:8', 'confirmed'],
             'role'           => ['required', 'in:requester,buyer,admin'],
             'whatsapp_phone' => ['nullable', 'string', 'max:20'],
+            'isActive'       => ['sometimes', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Checkbox não enviado = desmarcado
+        $this->merge(['isActive' => $this->boolean('isActive')]);
     }
 
     public function attributes(): array

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -20,12 +21,7 @@ Route::middleware('auth')->group(function () {
     // Admin
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', AdminUserController::class)->except(['show', 'destroy']);
-    });
-
-    // Rotas JSON (session auth + CSRF via apiFetch)
-    Route::prefix('api')->group(function () {
-        Route::patch('admin/users/{user}/toggleActive', [AdminUserController::class, 'toggleActive'])
-            ->name('admin.users.toggleActive');
+        Route::resource('costCenters', AdminCostCenterController::class)->except(['show', 'destroy']);
     });
 });
 

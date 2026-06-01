@@ -31,7 +31,6 @@
                         'admin'     => ['Admin',        'danger'],
                     ];
                     [$roleLabel, $roleColor] = $roleMap[$u->role] ?? [$u->role, 'secondary'];
-                    $isSelf = $u->id === auth()->id();
                 @endphp
                 <tr>
                     <td>
@@ -46,24 +45,11 @@
                     <td><span class="badge bg-{{ $roleColor }}">{{ $roleLabel }}</span></td>
                     <td style="font-size:14px;color:#475569">{{ $u->whatsapp_phone ?? '—' }}</td>
                     <td>
-                        <div x-data="{ active: {{ $u->isActive ? 'true' : 'false' }}, loading: false }">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                    :checked="active"
-                                    :disabled="loading || {{ $isSelf ? 'true' : 'false' }}"
-                                    @click.prevent="
-                                        loading = true;
-                                        apiFetch('/api/admin/users/{{ $u->id }}/toggleActive', { method: 'PATCH' })
-                                            .then(r => r.json())
-                                            .then(d => { active = d.isActive; toast(active ? 'Usuário ativado.' : 'Usuário desativado.'); })
-                                            .catch(() => toast('Erro ao alterar status.', 'error'))
-                                            .finally(() => loading = false)
-                                    ">
-                                <label class="form-check-label" style="font-size:13px" :class="active ? 'text-success' : 'text-danger'">
-                                    <span x-text="active ? 'Ativo' : 'Inativo'"></span>
-                                </label>
-                            </div>
-                        </div>
+                        @if($u->isActive)
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                        @else
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inativo</span>
+                        @endif
                     </td>
                     <td class="text-end">
                         <a href="{{ route('admin.users.edit', $u) }}" class="btn btn-sm btn-outline-secondary" title="Editar">

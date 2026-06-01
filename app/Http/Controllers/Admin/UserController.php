@@ -54,12 +54,4 @@ class UserController extends Controller
             ->with('success', 'Usuário atualizado com sucesso.');
     }
 
-    public function toggleActive(User $user)
-    {
-        $this->authorize('toggleActive', $user);
-
-        $user->update(['isActive' => !$user->isActive]);
-
-        return response()->json(['isActive' => $user->fresh()->isActive]);
-    }
 }
