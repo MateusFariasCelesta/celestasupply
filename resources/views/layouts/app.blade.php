@@ -293,7 +293,7 @@
                 <i class="bi bi-gear"></i> Admin <i class="bi bi-chevron-down" style="font-size:11px"></i>
             </span>
             <div class="cs-dropdown-menu">
-                <a href="#" class="cs-dropdown-item">
+                <a href="{{ route('admin.users.index') }}" class="cs-dropdown-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="bi bi-people"></i> Usuários
                 </a>
                 <a href="#" class="cs-dropdown-item">
@@ -362,6 +362,35 @@
         window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
     }
 
+    function phoneMask(input) {
+        const raw = input.value;
+
+        // Internacional: começa com + — deixa livre, só filtra caracteres inválidos
+        if (raw.startsWith('+')) {
+            input.value = raw.replace(/[^\d\s\-\+\(\)]/g, '').slice(0, 20);
+            return;
+        }
+
+        // Brasil: aplica máscara automática
+        let v = raw.replace(/\D/g, '').slice(0, 11);
+        if (v.length <= 10) {
+            v = v.replace(/^(\d{0,2})(\d{0,4})(\d{0,4})$/,
+                (_, ddd, part1, part2) => {
+                    if (!ddd)   return '';
+                    if (!part1) return `(${ddd}`;
+                    if (!part2) return `(${ddd}) ${part1}`;
+                    return `(${ddd}) ${part1}-${part2}`;
+                });
+        } else {
+            v = v.replace(/^(\d{2})(\d{5})(\d{0,4})$/,
+                (_, ddd, part1, part2) => {
+                    if (!part2) return `(${ddd}) ${part1}`;
+                    return `(${ddd}) ${part1}-${part2}`;
+                });
+        }
+        input.value = v;
+    }
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const apiFetch = (url, options = {}) => fetch(url, {
         headers: {
@@ -375,5 +404,18 @@
 </script>
 
 @stack('scripts')
+
+@if(session('success') || session('error'))
+<script>
+    document.addEventListener('alpine:initialized', () => {
+        @if(session('success'))
+            toast(@json(session('success')));
+        @endif
+        @if(session('error'))
+            toast(@json(session('error')), 'error');
+        @endif
+    });
+</script>
+@endif
 </body>
 </html>
