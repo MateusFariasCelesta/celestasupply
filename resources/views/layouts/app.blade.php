@@ -288,6 +288,10 @@
         @endif
 
         @if(auth()->user()->isBuyerOrAdmin())
+        <a href="{{ route('items.index') }}"
+           class="cs-nav-link {{ request()->routeIs('items.*') ? 'active' : '' }}">
+            <i class="bi bi-box"></i> Itens
+        </a>
         <a href="{{ route('admin.costCenters.index') }}"
            class="cs-nav-link {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
             <i class="bi bi-building"></i> Centros de Custo

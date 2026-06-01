@@ -4,14 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Supplier extends Model
+class Item extends Model
 {
-
-    protected $fillable = [
-        'name',
-        'contact',
-        'isActive',
-    ];
+    protected $fillable = ['name', 'isActive'];
 
     protected $casts = [
         'isActive' => 'boolean',

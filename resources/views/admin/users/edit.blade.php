@@ -73,6 +73,7 @@
         <div class="mb-4">
             <label class="form-label fw-semibold" style="font-size:13px">Status</label>
             <div class="form-check form-switch">
+                <input type="hidden" name="isActive" value="0">
                 <input class="form-check-input" type="checkbox" name="isActive" value="1" id="isActive"
                        {{ old('isActive', $user->isActive) ? 'checked' : '' }}>
                 <label class="form-check-label" for="isActive" style="font-size:14px">Usuário ativo</label>
