@@ -9,64 +9,82 @@
     </a>
 </div>
 
+{{-- Busca --}}
+<div style="max-width:600px;margin:0 auto 24px">
+    <div style="position:relative">
+        <i class="bi bi-search" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;pointer-events:none"></i>
+        <input type="text" id="f-q" class="form-control"
+               placeholder="Buscar por código, título, item, solicitante…"
+               autocomplete="off"
+               style="padding:13px 16px 13px 44px;font-size:15px;border-radius:8px;border:1.5px solid #D1D9E6;box-shadow:0 2px 12px rgba(15,32,68,.07)">
+    </div>
+</div>
+
 {{-- Filtros client-side --}}
-<div class="cs-card mb-4">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label fw-semibold" style="font-size:12px">Buscar</label>
-            <input type="text" id="f-q" class="form-control form-control-sm"
-                   placeholder="Código, título, centro de custo, solicitante, item…" autocomplete="off">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold" style="font-size:12px">Status</label>
-            <select id="f-status" class="form-select form-select-sm">
-                <option value="">Todos</option>
-                @foreach(\App\Enums\RequestStatus::cases() as $s)
-                <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold" style="font-size:12px">Urgência</label>
-            <select id="f-urgency" class="form-select form-select-sm">
-                <option value="">Todas</option>
-                @foreach(\App\Enums\Urgency::cases() as $u)
-                <option value="{{ $u->value }}">{{ $u->label() }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label fw-semibold" style="font-size:12px">Centro de Custo</label>
-            <select id="f-cc" class="form-select form-select-sm">
-                <option value="">Todos</option>
-                @foreach($costCenters as $cc)
-                <option value="{{ $cc->id }}">{{ $cc->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        @if(auth()->user()->isBuyerOrAdmin())
-        <div class="col-md-3">
-            <label class="form-label fw-semibold" style="font-size:12px">Solicitante</label>
-            <select id="f-user" class="form-select form-select-sm">
-                <option value="">Todos</option>
-                @foreach($requesters as $u)
-                <option value="{{ $u->id }}">{{ $u->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        @endif
-        <div class="col-md-2">
-            <label class="form-label fw-semibold" style="font-size:12px">De</label>
-            <input type="date" id="f-from" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold" style="font-size:12px">Até</label>
-            <input type="date" id="f-to" class="form-control form-control-sm">
-        </div>
-        <div class="col-auto">
-            <button type="button" id="f-clear" class="btn btn-sm btn-outline-secondary" style="display:none">
-                <i class="bi bi-x me-1"></i>Limpar
-            </button>
+<div class="cs-card mb-4" id="f-filters-card">
+    {{-- Botão toggle (só mobile) --}}
+    <button class="btn btn-sm btn-outline-secondary d-flex d-md-none align-items-center gap-1 mb-2 collapsed"
+            id="f-toggle-btn" type="button"
+            data-bs-toggle="collapse" data-bs-target="#f-filters-body"
+            aria-expanded="false" aria-controls="f-filters-body">
+        <i class="bi bi-sliders2"></i> Filtros
+        <i class="bi bi-chevron-down f-chevron" style="font-size:10px"></i>
+    </button>
+
+    {{-- Filtros --}}
+    <div class="collapse d-md-block" id="f-filters-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">Status</label>
+                <select id="f-status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    @foreach(\App\Enums\RequestStatus::cases() as $s)
+                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">Urgência</label>
+                <select id="f-urgency" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach(\App\Enums\Urgency::cases() as $u)
+                    <option value="{{ $u->value }}">{{ $u->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">Centro de Custo</label>
+                <select id="f-cc" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    @foreach($costCenters as $cc)
+                    <option value="{{ $cc->id }}">{{ $cc->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @if(auth()->user()->isBuyerOrAdmin())
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">Solicitante</label>
+                <select id="f-user" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    @foreach($requesters as $u)
+                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">De</label>
+                <input type="date" id="f-from" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md">
+                <label class="form-label fw-semibold" style="font-size:12px">Até</label>
+                <input type="date" id="f-to" class="form-control form-control-sm">
+            </div>
+            <div class="col-auto">
+                <button type="button" id="f-clear" class="btn btn-sm btn-outline-secondary" style="display:none">
+                    <i class="bi bi-x me-1"></i>Limpar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -139,6 +157,16 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .f-chevron { transition: transform .2s ease; }
+    #f-toggle-btn:not(.collapsed) .f-chevron { transform: rotate(-180deg); }
+    @media (max-width: 767px) {
+        #f-filters-card { background: none; border: none; box-shadow: none; padding: 0; }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
