@@ -275,7 +275,7 @@
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
-        <a href="#"
+        <a href="{{ route('requests.index') }}"
            class="cs-nav-link {{ request()->routeIs('requests.*') ? 'active' : '' }}">
             <i class="bi bi-clipboard-check"></i> Solicitações
         </a>
@@ -407,6 +407,7 @@
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const apiFetch = (url, options = {}) => fetch(url, {
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,

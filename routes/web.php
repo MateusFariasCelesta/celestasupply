@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplyRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,8 +21,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Supply Requests
+    Route::resource('requests', SupplyRequestController::class)
+        ->except(['destroy'])
+        ->parameters(['requests' => 'supplyRequest']);
+    Route::post('requests/{supplyRequest}/submit', [SupplyRequestController::class, 'submit'])->name('requests.submit');
+    Route::post('requests/{supplyRequest}/cancel-request', [SupplyRequestController::class, 'cancelRequest'])->name('requests.cancelRequest');
+
     // Items
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);
+    Route::get('lookup/items', [ItemController::class, 'search'])->name('items.suggest');
+    Route::post('lookup/items', [ItemController::class, 'apiStore'])->name('items.inline');
 
     // Suppliers (buyer + admin)
     Route::resource('suppliers', SupplierController::class)->except(['show', 'destroy']);
