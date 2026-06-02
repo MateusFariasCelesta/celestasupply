@@ -57,22 +57,144 @@
                             <th style="font-size:12px;color:#64748B;font-weight:600">Item</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Qtd.</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Unidade</th>
+                            <th style="font-size:12px;color:#64748B;font-weight:600">Fornecedor</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Observação</th>
+                            <th style="font-size:12px;color:#64748B;font-weight:600">Obs.</th>
+                            @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
+                            <th style="font-size:12px;color:#64748B;font-weight:600">Ações</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($supplyRequest->items as $item)
-                        <tr>
+                        <tr @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
                             <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
                             <td style="font-size:14px">{{ $item->quantity }}</td>
                             <td style="font-size:13px;color:#64748B">{{ $item->unit ?? '—' }}</td>
+                            <td style="font-size:13px;min-width:160px">
+                                @can('setSupplier', $item)
+                                <form method="POST" action="{{ route('requests.items.supplier', [$supplyRequest, $item]) }}"
+                                      class="d-flex align-items-center gap-1">
+                                    @csrf @method('PATCH')
+                                    <select name="supplier_id" class="form-select form-select-sm"
+                                            onchange="this.form.submit()"
+                                            style="font-size:12px;min-width:120px">
+                                        <option value="">— Nenhum —</option>
+                                        @foreach($suppliers as $s)
+                                        <option value="{{ $s->id }}" @selected($item->supplier_id == $s->id)>
+                                            {{ $s->name }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                                @else
+                                <span style="color:#64748B">{{ $item->supplier?->name ?? '—' }}</span>
+                                @endcan
+                            </td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size:11px">
+                                <span class="cs-badge {{ $item->status->badgeClass() }}">
                                     {{ $item->status->label() }}
                                 </span>
+                                @if($item->cancel_reason)
+                                <div style="font-size:11px;color:#94A3B8;margin-top:3px">{{ $item->cancel_reason }}</div>
+                                @endif
                             </td>
                             <td style="font-size:13px;color:#64748B">{{ $item->notes ?? '—' }}</td>
+                            @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
+                            <td>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    @if(auth()->user()->isBuyerOrAdmin())
+                                        @can('jumpStatus', $item)
+                                        <form method="POST" action="{{ route('requests.items.jumpStatus', [$supplyRequest, $item]) }}"
+                                              class="d-inline-flex align-items-center gap-1">
+                                            @csrf @method('PATCH')
+                                            <select name="status" class="form-select form-select-sm"
+                                                    style="font-size:11px;width:auto;padding:2px 6px">
+                                                <option value="" disabled selected>→</option>
+                                                @foreach(\App\Enums\ItemStatus::cases() as $s)
+                                                    @if($s !== $item->status && $s !== \App\Enums\ItemStatus::Cancelled)
+                                                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                    style="font-size:11px;padding:2px 6px">
+                                                <i class="bi bi-lightning-charge"></i>
+                                            </button>
+                                        </form>
+                                        @elsecan('updateStatus', $item)
+                                        @if($item->status === \App\Enums\ItemStatus::Quoting)
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                style="font-size:11px;padding:2px 8px"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#orderNumberModal"
+                                                data-action="{{ route('requests.items.status', [$supplyRequest, $item]) }}"
+                                                data-item-name="{{ $item->item->name }}">
+                                            <i class="bi bi-arrow-right"></i> {{ $item->status->nextStatus()->label() }}
+                                        </button>
+                                        @else
+                                        <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                    title="Avançar para {{ $item->status->nextStatus()->label() }}"
+                                                    style="font-size:11px;padding:2px 8px">
+                                                <i class="bi bi-arrow-right"></i> {{ $item->status->nextStatus()->label() }}
+                                            </button>
+                                        </form>
+                                        @endif
+                                        @endcan
+
+                                        @can('approveCancellation', $item)
+                                        <form method="POST" action="{{ route('requests.items.approveCancellation', [$supplyRequest, $item]) }}" class="d-inline"
+                                              onsubmit="return confirm('Aprovar o cancelamento deste item?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                    style="font-size:11px;padding:2px 8px">
+                                                <i class="bi bi-check"></i> Aprovar
+                                            </button>
+                                        </form>
+                                        @endcan
+
+                                        @can('refuseCancellation', $item)
+                                        <form method="POST" action="{{ route('requests.items.refuseCancellation', [$supplyRequest, $item]) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                    style="font-size:11px;padding:2px 8px">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Recusar
+                                            </button>
+                                        </form>
+                                        @endcan
+
+                                        @can('cancel', $item)
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                style="font-size:11px;padding:2px 7px"
+                                                title="Cancelar item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#cancelItemModal"
+                                                data-item-id="{{ $item->id }}"
+                                                data-item-name="{{ $item->item->name }}"
+                                                data-action="{{ route('requests.items.cancel', [$supplyRequest, $item]) }}">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                        @endcan
+                                    @endif
+
+                                    @can('requestCancellation', $item)
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            style="font-size:11px;padding:2px 8px"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#requestCancelItemModal"
+                                            data-action="{{ route('requests.items.requestCancellation', [$supplyRequest, $item]) }}"
+                                            data-item-name="{{ $item->item->name }}">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </button>
+                                    @endcan
+                                </div>
+                            </td>
+                            @endif
                         </tr>
                         @endforeach
                     </tbody>
@@ -83,7 +205,12 @@
 </div>
 
 {{-- Actions --}}
-<div class="d-flex gap-2 mt-4 flex-wrap">
+@php
+    $itemsDone      = $supplyRequest->items->every(fn($i) => in_array($i->status->value, ['received', 'cancelled']));
+    $pendingItems   = $supplyRequest->items->filter(fn($i) => !in_array($i->status->value, ['received', 'cancelled']))->count();
+    $blockTooltip   = "Há {$pendingItems} item(ns) que ainda não foram recebidos ou cancelados.";
+@endphp
+<div class="d-flex gap-2 mt-4 flex-wrap align-items-center">
     @can('update', $supplyRequest)
     <a href="{{ route('requests.edit', $supplyRequest) }}" class="btn btn-outline-secondary">
         <i class="bi bi-pencil me-1"></i>Editar Rascunho
@@ -99,24 +226,64 @@
     </form>
     @endcan
 
-    {{-- Comprador/Admin: avançar status --}}
-    @can('advanceStatus', $supplyRequest)
-    <form method="POST" action="{{ route('requests.advanceStatus', $supplyRequest) }}" class="d-inline">
-        @csrf
-        @php
-            $nextLabels = [
-                'pending'         => 'Iniciar Cotação',
-                'quoting'         => 'Aguardar Pagamento',
-                'awaitingPayment' => 'Aguardar Retirada',
-                'awaitingPickup'  => 'Enviar para Revisão',
-                'review'          => 'Confirmar Conclusão',
-            ];
-            $btnLabel = $nextLabels[$supplyRequest->status->value] ?? 'Avançar Status';
-        @endphp
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-arrow-right-circle me-1"></i>{{ $btnLabel }}
+    @can('delete', $supplyRequest)
+    <form method="POST" action="{{ route('requests.destroy', $supplyRequest) }}" class="d-inline"
+          onsubmit="return confirm('Excluir este rascunho permanentemente? Esta ação não pode ser desfeita.')">
+        @csrf @method('DELETE')
+        <button type="submit" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-1"></i>Excluir Rascunho
         </button>
     </form>
+    @endcan
+
+    {{-- Admin: saltar para qualquer status --}}
+    @can('jumpStatus', $supplyRequest)
+    <form method="POST" action="{{ route('requests.jumpStatus', $supplyRequest) }}"
+          class="d-inline-flex align-items-center gap-2">
+        @csrf
+        <select name="status" class="form-select form-select-sm" style="width:auto;font-size:13px">
+            <option value="" disabled selected>Ir para…</option>
+            @foreach(\App\Enums\RequestStatus::cases() as $s)
+                @if($s !== \App\Enums\RequestStatus::Draft && $s !== $supplyRequest->status)
+                <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                @endif
+            @endforeach
+        </select>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-lightning-charge me-1"></i>Forçar
+        </button>
+    </form>
+    @endcan
+
+    {{-- Buyer (não admin): avançar status no fluxo normal --}}
+    @if(!auth()->user()->isAdmin())
+    @can('advanceStatus', $supplyRequest)
+    @php
+        $isCompleting = $supplyRequest->status === \App\Enums\RequestStatus::InProgress;
+        $canAdvance   = !$isCompleting || $itemsDone;
+        $advanceLabel = $isCompleting ? 'Confirmar Conclusão' : 'Iniciar Atendimento';
+    @endphp
+    <form method="POST" action="{{ route('requests.advanceStatus', $supplyRequest) }}" class="d-inline">
+        @csrf
+        <button type="submit"
+                class="btn {{ $canAdvance ? 'btn-primary' : 'btn-secondary' }}"
+                @disabled(!$canAdvance)
+                title="{{ !$canAdvance ? $blockTooltip : '' }}">
+            <i class="bi bi-arrow-right-circle me-1"></i>{{ $advanceLabel }}
+        </button>
+    </form>
+    @endcan
+    @endif
+
+    {{-- Comprador: cancelar diretamente --}}
+    @can('cancelDirect', $supplyRequest)
+    <button type="button"
+            class="btn {{ $itemsDone ? 'btn-outline-danger' : 'btn-outline-secondary' }}"
+            @disabled(!$itemsDone)
+            title="{{ !$itemsDone ? $blockTooltip : '' }}"
+            @if($itemsDone) data-bs-toggle="modal" data-bs-target="#cancelDirectModal" @endif>
+        <i class="bi bi-x-circle me-1"></i>Cancelar Solicitação
+    </button>
     @endcan
 
     {{-- Comprador/Admin: aprovar ou recusar cancelamento --}}
@@ -149,6 +316,159 @@
 </div>
 
 @endsection
+
+@if(auth()->user()->isBuyerOrAdmin())
+@push('modals')
+{{-- Modal: número do pedido (quoting → awaitingPayment) --}}
+<div class="modal fade" id="orderNumberModal" tabindex="-1" aria-labelledby="orderNumberModalLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <form method="POST" id="orderNumberForm">
+            @csrf @method('PATCH')
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderNumberModalLabel">Número do Pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3" style="font-size:14px">
+                        Item: <strong id="orderNumberItemName"></strong>
+                    </p>
+                    <label for="order_number_input" class="form-label fw-semibold">
+                        Nº do Pedido / PO <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="order_number_input" name="order_number"
+                           class="form-control" maxlength="100" required
+                           placeholder="Ex: PO-2026-001">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.getElementById('orderNumberModal').addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+    document.getElementById('orderNumberForm').action = btn.dataset.action;
+    document.getElementById('orderNumberItemName').textContent = btn.dataset.itemName;
+    document.getElementById('order_number_input').value = '';
+});
+</script>
+
+{{-- Modal: cancelar item --}}
+<div class="modal fade" id="cancelItemModal" tabindex="-1" aria-labelledby="cancelItemModalLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <form method="POST" id="cancelItemForm">
+            @csrf @method('DELETE')
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelItemModalLabel">Cancelar Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3" style="font-size:14px">
+                        Cancelar: <strong id="cancelItemName"></strong>
+                    </p>
+                    <label for="cancel_reason_item" class="form-label fw-semibold">
+                        Motivo <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="cancel_reason_item" name="cancel_reason"
+                              class="form-control" rows="3" maxlength="500" required
+                              placeholder="Motivo do cancelamento do item…"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <button type="submit" class="btn btn-danger">Cancelar Item</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.getElementById('cancelItemModal').addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+    document.getElementById('cancelItemForm').action = btn.dataset.action;
+    document.getElementById('cancelItemName').textContent = btn.dataset.itemName;
+    document.getElementById('cancel_reason_item').value = '';
+});
+</script>
+@endpush
+@endif
+
+@push('modals')
+<div class="modal fade" id="requestCancelItemModal" tabindex="-1" aria-labelledby="requestCancelItemModalLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <form method="POST" id="requestCancelItemForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="requestCancelItemModalLabel">Solicitar Cancelamento de Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3" style="font-size:14px">
+                        Item: <strong id="requestCancelItemName"></strong>
+                    </p>
+                    <label for="request_cancel_item_reason" class="form-label fw-semibold">
+                        Motivo <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="request_cancel_item_reason" name="cancel_reason"
+                              class="form-control" rows="3" maxlength="500" required
+                              placeholder="Descreva o motivo do cancelamento…"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <button type="submit" class="btn btn-danger">Solicitar Cancelamento</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.getElementById('requestCancelItemModal').addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+    document.getElementById('requestCancelItemForm').action = btn.dataset.action;
+    document.getElementById('requestCancelItemName').textContent = btn.dataset.itemName;
+    document.getElementById('request_cancel_item_reason').value = '';
+});
+</script>
+@endpush
+
+@can('cancelDirect', $supplyRequest)
+@push('modals')
+<div class="modal fade" id="cancelDirectModal" tabindex="-1" aria-labelledby="cancelDirectModalLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ route('requests.cancelDirect', $supplyRequest) }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelDirectModalLabel">Cancelar Solicitação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="cancellation_reason_direct" class="form-label fw-semibold">
+                        Motivo <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="cancellation_reason_direct" name="cancellation_reason"
+                              class="form-control @error('cancellation_reason') is-invalid @enderror"
+                              rows="4" maxlength="1000" required
+                              placeholder="Descreva o motivo do cancelamento…">{{ old('cancellation_reason') }}</textarea>
+                    @error('cancellation_reason')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@endpush
+@endcan
 
 @can('cancelRequest', $supplyRequest)
 @push('modals')

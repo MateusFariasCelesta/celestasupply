@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ItemStatus;
 use App\Enums\RequestStatus;
 use App\Models\RequestStatusHistory;
 use App\Models\SupplyRequest;
@@ -10,11 +11,8 @@ use App\Models\User;
 class RequestStatusService
 {
     public const TRANSITIONS = [
-        'pending'         => RequestStatus::Quoting,
-        'quoting'         => RequestStatus::AwaitingPayment,
-        'awaitingPayment' => RequestStatus::AwaitingPickup,
-        'awaitingPickup'  => RequestStatus::Review,
-        'review'          => RequestStatus::Completed,
+        'pending'    => RequestStatus::InProgress,
+        'inProgress' => RequestStatus::Completed,
     ];
 
     public function canAdvance(SupplyRequest $sr): bool
@@ -30,7 +28,24 @@ class RequestStatusService
             throw new \LogicException("Não há transição disponível a partir de '{$sr->status->value}'.");
         }
 
+        if ($next === RequestStatus::Completed) {
+            $blocked = $sr->items()
+                ->whereNotIn('status', [ItemStatus::Received->value, ItemStatus::Cancelled->value])
+                ->count();
+
+            if ($blocked > 0) {
+                throw new \LogicException(
+                    "Há {$blocked} item(ns) que ainda não foram recebidos ou cancelados. Conclua ou cancele todos os itens antes de fechar a solicitação."
+                );
+            }
+        }
+
         $this->transition($sr, $next, $actor);
+    }
+
+    public function jumpToStatus(SupplyRequest $sr, RequestStatus $to, User $actor): void
+    {
+        $this->transition($sr, $to, $actor);
     }
 
     public function submit(SupplyRequest $sr, User $actor): void
@@ -63,6 +78,8 @@ class RequestStatusService
     {
         $from = $sr->status;
 
+        $this->cascadeItemStatuses($sr, $to);
+
         $sr->update([
             'previous_status' => $from->value,
             'status'          => $to,
@@ -74,5 +91,24 @@ class RequestStatusService
             'to_status'         => $to->value,
             'changed_by'        => $actor->id,
         ]);
+    }
+
+    private function cascadeItemStatuses(SupplyRequest $sr, RequestStatus $to): void
+    {
+        $cascade = match($to) {
+            RequestStatus::Completed  => [
+                ['statuses' => ['pending', 'quoting', 'awaitingPayment', 'awaitingDelivery'], 'target' => ItemStatus::Received],
+            ],
+            RequestStatus::Cancelled  => [
+                ['statuses' => ['pending', 'quoting', 'awaitingPayment'], 'target' => ItemStatus::Cancelled],
+            ],
+            default => [],
+        };
+
+        foreach ($cascade as $rule) {
+            $sr->items()
+                ->whereIn('status', $rule['statuses'])
+                ->update(['status' => $rule['target']->value]);
+        }
     }
 }

@@ -6,20 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('supply_request_items', function (Blueprint $table) {
-            $table->decimal('quantity', 10, 3)->change();
+            $table->enum('previous_status', ['pending','quoting','awaitingPayment','awaitingDelivery','received','cancelled','cancelRequested'])
+                  ->nullable()
+                  ->after('status');
         });
     }
 
     public function down(): void
     {
         Schema::table('supply_request_items', function (Blueprint $table) {
-            $table->unsignedSmallInteger('quantity')->change();
+            $table->dropColumn('previous_status');
         });
     }
 };

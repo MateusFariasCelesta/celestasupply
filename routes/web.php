@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RequestItemController;
 use App\Http\Controllers\RequestManagementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplyRequestController;
@@ -24,11 +25,21 @@ Route::middleware('auth')->group(function () {
 
     // Supply Requests
     Route::resource('requests', SupplyRequestController::class)
-        ->except(['destroy'])
         ->parameters(['requests' => 'supplyRequest']);
     Route::post('requests/{supplyRequest}/submit', [SupplyRequestController::class, 'submit'])->name('requests.submit');
     Route::post('requests/{supplyRequest}/cancel-request', [SupplyRequestController::class, 'cancelRequest'])->name('requests.cancelRequest');
+    // Item actions (buyer/admin)
+    Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/status', [RequestItemController::class, 'updateStatus'])->name('requests.items.status');
+    Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/jump-status', [RequestItemController::class, 'jumpStatus'])->name('requests.items.jumpStatus');
+    Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/supplier', [RequestItemController::class, 'setSupplier'])->name('requests.items.supplier');
+    Route::delete('requests/{supplyRequest}/items/{supplyRequestItem}', [RequestItemController::class, 'cancel'])->name('requests.items.cancel');
+    Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/request-cancellation', [RequestItemController::class, 'requestCancellation'])->name('requests.items.requestCancellation');
+    Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/approve-cancellation', [RequestItemController::class, 'approveCancellation'])->name('requests.items.approveCancellation');
+    Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/refuse-cancellation', [RequestItemController::class, 'refuseCancellation'])->name('requests.items.refuseCancellation');
+
+    Route::post('requests/{supplyRequest}/cancel', [RequestManagementController::class, 'cancelDirect'])->name('requests.cancelDirect');
     Route::post('requests/{supplyRequest}/advance-status', [RequestManagementController::class, 'advanceStatus'])->name('requests.advanceStatus');
+    Route::post('requests/{supplyRequest}/jump-status', [RequestManagementController::class, 'jumpStatus'])->name('requests.jumpStatus');
     Route::post('requests/{supplyRequest}/approve-cancellation', [RequestManagementController::class, 'approveCancellation'])->name('requests.approveCancellation');
     Route::post('requests/{supplyRequest}/refuse-cancellation', [RequestManagementController::class, 'refuseCancellation'])->name('requests.refuseCancellation');
 

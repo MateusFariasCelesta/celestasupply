@@ -310,15 +310,17 @@
             text-transform: uppercase;
         }
 
+        /* Request statuses */
         .cs-badge-draft           { background: #F1F5F9; color: #475569;  border: 1px solid #CBD5E1; }
-        .cs-badge-pending         { background: #FFFBEB; color: #92400E;  border: 1px solid #FDE68A; }
-        .cs-badge-quoting         { background: #EFF6FF; color: #1E40AF;  border: 1px solid #BFDBFE; }
-        .cs-badge-awaitingPayment { background: #FFF7ED; color: #9A3412;  border: 1px solid #FED7AA; }
-        .cs-badge-awaitingPickup  { background: #F5F3FF; color: #5B21B6;  border: 1px solid #DDD6FE; }
-        .cs-badge-review          { background: #F0FDFA; color: #065F46;  border: 1px solid #99F6E4; }
+        .cs-badge-pending         { background: #EFF6FF; color: #1D4ED8;  border: 1px solid #BFDBFE; }
+        .cs-badge-inProgress      { background: #FEFCE8; color: #A16207;  border: 1px solid #FEF08A; }
         .cs-badge-completed       { background: #F0FDF4; color: #166534;  border: 1px solid #BBF7D0; }
         .cs-badge-cancelRequested { background: #FFF1F2; color: #9F1239;  border: 1px solid #FECDD3; }
         .cs-badge-cancelled       { background: #FEF2F2; color: #7F1D1D;  border: 1px solid #FECACA; }
+        /* Item statuses */
+        .cs-badge-quoting         { background: #FFFBEB; color: #B45309;  border: 1px solid #FDE68A; }
+        .cs-badge-awaitingPayment { background: #FFF7ED; color: #C2410C;  border: 1px solid #FED7AA; }
+        .cs-badge-awaitingPickup  { background: #FDF4DC; color: #78350F;  border: 1px solid #F0CFA0; }
 
         .cs-badge-low    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
         .cs-badge-medium { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }

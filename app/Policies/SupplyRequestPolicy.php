@@ -24,7 +24,15 @@ class SupplyRequestPolicy
 
     public function view(User $user, SupplyRequest $sr): bool
     {
+        if ($sr->status === RequestStatus::Draft) {
+            return $sr->user_id === $user->id;
+        }
         return $user->isBuyerOrAdmin() || $sr->user_id === $user->id;
+    }
+
+    public function delete(User $user, SupplyRequest $sr): bool
+    {
+        return $sr->user_id === $user->id && $sr->status === RequestStatus::Draft;
     }
 
     public function create(User $user): bool
@@ -44,7 +52,7 @@ class SupplyRequestPolicy
 
     public function cancelRequest(User $user, SupplyRequest $sr): bool
     {
-        $allowed = [RequestStatus::Pending, RequestStatus::Quoting, RequestStatus::AwaitingPayment];
+        $allowed = [RequestStatus::Pending, RequestStatus::InProgress];
         return $sr->user_id === $user->id && in_array($sr->status, $allowed);
     }
 
@@ -54,8 +62,14 @@ class SupplyRequestPolicy
             return isset(RequestStatusService::TRANSITIONS[$sr->status->value]);
         }
 
-        // Requester pode confirmar recebimento (review → completed)
-        return $sr->user_id === $user->id && $sr->status === RequestStatus::Review;
+        // Requester pode confirmar conclusão (inProgress → completed)
+        return $sr->user_id === $user->id && $sr->status === RequestStatus::InProgress;
+    }
+
+    public function cancelDirect(User $user, SupplyRequest $sr): bool
+    {
+        $uncancellable = [RequestStatus::Draft, RequestStatus::Cancelled, RequestStatus::Completed];
+        return $user->isBuyerOrAdmin() && !in_array($sr->status, $uncancellable);
     }
 
     public function approveCancellation(User $user, SupplyRequest $sr): bool
@@ -66,5 +80,10 @@ class SupplyRequestPolicy
     public function refuseCancellation(User $user, SupplyRequest $sr): bool
     {
         return $user->isBuyerOrAdmin() && $sr->status === RequestStatus::CancelRequested;
+    }
+
+    public function jumpStatus(User $user, SupplyRequest $sr): bool
+    {
+        return $user->isAdmin();
     }
 }

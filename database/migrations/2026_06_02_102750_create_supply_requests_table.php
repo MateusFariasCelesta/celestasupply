@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('supply_requests', function (Blueprint $table) {
@@ -18,16 +15,15 @@ return new class extends Migration
             $table->string('cost_center_id', 20);
             $table->foreign('cost_center_id')->references('id')->on('cost_centers');
             $table->foreignId('user_id')->constrained('users');
-            $table->string('urgency')->default('low');
-            $table->string('status')->default('draft');
+            $table->enum('urgency', ['low', 'medium', 'high'])->default('low');
+            $table->enum('status', ['draft', 'pending', 'inProgress', 'completed', 'cancelled', 'cancelRequested'])->default('draft');
+            $table->enum('previous_status', ['draft', 'pending', 'inProgress', 'completed', 'cancelled', 'cancelRequested'])->nullable();
             $table->text('notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('supply_requests');

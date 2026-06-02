@@ -24,6 +24,11 @@ class SupplyRequestController extends Controller
 
         if (!auth()->user()->isBuyerOrAdmin()) {
             $query->where('user_id', auth()->id());
+        } else {
+            $query->where(function ($q) {
+                $q->where('status', '!=', RequestStatus::Draft->value)
+                  ->orWhere('user_id', auth()->id());
+            });
         }
 
         $supplyRequests = $query->get();
@@ -83,7 +88,11 @@ class SupplyRequestController extends Controller
 
         $supplyRequest->load(['costCenter', 'user', 'items.item', 'items.supplier']);
 
-        return view('supply-requests.show', compact('supplyRequest'));
+        $suppliers = auth()->user()->isBuyerOrAdmin()
+            ? \App\Models\Supplier::where('isActive', true)->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return view('supply-requests.show', compact('supplyRequest', 'suppliers'));
     }
 
     public function edit(SupplyRequest $supplyRequest): View
@@ -137,6 +146,17 @@ class SupplyRequestController extends Controller
 
         return redirect()->route('requests.show', $supplyRequest)
             ->with('success', 'Solicitação enviada com sucesso.');
+    }
+
+    public function destroy(SupplyRequest $supplyRequest): RedirectResponse
+    {
+        $this->authorize('delete', $supplyRequest);
+
+        $supplyRequest->items()->delete();
+        $supplyRequest->delete();
+
+        return redirect()->route('requests.index')
+            ->with('success', 'Rascunho excluído com sucesso.');
     }
 
     private function resolveItemId(string $raw): int

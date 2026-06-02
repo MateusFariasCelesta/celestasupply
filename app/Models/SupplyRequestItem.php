@@ -15,18 +15,18 @@ class SupplyRequestItem extends Model
         'unit',
         'notes',
         'supplier_id',
-        'unit_price',
-        'total_price',
+        'order_number',
         'status',
         'delivered_quantity',
         'cancel_reason',
+        'previous_status',
     ];
 
     protected $casts = [
-        'status'     => ItemStatus::class,
-        'quantity'    => 'decimal:3',
-        'unit_price'  => 'decimal:2',
-        'total_price' => 'decimal:2',
+        'status'           => ItemStatus::class,
+        'previous_status'  => ItemStatus::class,
+        'quantity'          => 'decimal:3',
+        'delivered_quantity' => 'decimal:3',
     ];
 
     public function supplyRequest(): BelongsTo

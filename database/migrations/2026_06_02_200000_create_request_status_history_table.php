@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('request_status_history', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supply_request_id')->constrained()->cascadeOnDelete();
-            $table->string('from_status')->nullable();
-            $table->string('to_status');
+            $table->enum('from_status', ['draft', 'pending', 'inProgress', 'completed', 'cancelled', 'cancelRequested'])->nullable();
+            $table->enum('to_status', ['draft', 'pending', 'inProgress', 'completed', 'cancelled', 'cancelRequested']);
             $table->foreignId('changed_by')->constrained('users');
             $table->timestamps();
         });
