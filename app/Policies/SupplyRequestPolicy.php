@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\RequestStatus;
 use App\Models\SupplyRequest;
 use App\Models\User;
+use App\Services\RequestStatusService;
 
 class SupplyRequestPolicy
 {
@@ -43,7 +44,27 @@ class SupplyRequestPolicy
 
     public function cancelRequest(User $user, SupplyRequest $sr): bool
     {
-        $closed = [RequestStatus::Completed, RequestStatus::Cancelled, RequestStatus::CancelRequested];
-        return $sr->user_id === $user->id && !in_array($sr->status, $closed);
+        $allowed = [RequestStatus::Pending, RequestStatus::Quoting, RequestStatus::AwaitingPayment];
+        return $sr->user_id === $user->id && in_array($sr->status, $allowed);
+    }
+
+    public function advanceStatus(User $user, SupplyRequest $sr): bool
+    {
+        if ($user->isBuyerOrAdmin()) {
+            return isset(RequestStatusService::TRANSITIONS[$sr->status->value]);
+        }
+
+        // Requester pode confirmar recebimento (review → completed)
+        return $sr->user_id === $user->id && $sr->status === RequestStatus::Review;
+    }
+
+    public function approveCancellation(User $user, SupplyRequest $sr): bool
+    {
+        return $user->isBuyerOrAdmin() && $sr->status === RequestStatus::CancelRequested;
+    }
+
+    public function refuseCancellation(User $user, SupplyRequest $sr): bool
+    {
+        return $user->isBuyerOrAdmin() && $sr->status === RequestStatus::CancelRequested;
     }
 }

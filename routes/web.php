@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RequestManagementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplyRequestController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,9 @@ Route::middleware('auth')->group(function () {
         ->parameters(['requests' => 'supplyRequest']);
     Route::post('requests/{supplyRequest}/submit', [SupplyRequestController::class, 'submit'])->name('requests.submit');
     Route::post('requests/{supplyRequest}/cancel-request', [SupplyRequestController::class, 'cancelRequest'])->name('requests.cancelRequest');
+    Route::post('requests/{supplyRequest}/advance-status', [RequestManagementController::class, 'advanceStatus'])->name('requests.advanceStatus');
+    Route::post('requests/{supplyRequest}/approve-cancellation', [RequestManagementController::class, 'approveCancellation'])->name('requests.approveCancellation');
+    Route::post('requests/{supplyRequest}/refuse-cancellation', [RequestManagementController::class, 'refuseCancellation'])->name('requests.refuseCancellation');
 
     // Items
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);

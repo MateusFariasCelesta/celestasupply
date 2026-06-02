@@ -9,6 +9,7 @@ use App\Models\CostCenter;
 use App\Models\Item;
 use App\Models\SupplyRequest;
 use App\Models\User;
+use App\Services\RequestStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -44,7 +45,7 @@ class SupplyRequestController extends Controller
         return view('supply-requests.create', compact('costCenters', 'items'));
     }
 
-    public function store(StoreSupplyRequestRequest $request): RedirectResponse
+    public function store(StoreSupplyRequestRequest $request, RequestStatusService $statusService): RedirectResponse
     {
         $this->authorize('create', SupplyRequest::class);
 
@@ -56,7 +57,7 @@ class SupplyRequestController extends Controller
             'urgency'        => $data['urgency'],
             'notes'          => $data['notes'] ?? null,
             'user_id'        => auth()->id(),
-            'status'         => $data['action'] === 'submit' ? RequestStatus::Pending : RequestStatus::Draft,
+            'status'         => RequestStatus::Draft,
         ]);
 
         foreach ($data['items'] as $row) {
@@ -68,11 +69,12 @@ class SupplyRequestController extends Controller
             ]);
         }
 
-        $message = $data['action'] === 'submit'
-            ? 'Solicitação enviada com sucesso.'
-            : 'Rascunho salvo com sucesso.';
+        if ($data['action'] === 'submit') {
+            $statusService->submit($sr, auth()->user());
+            return redirect()->route('requests.show', $sr)->with('success', 'Solicitação enviada com sucesso.');
+        }
 
-        return redirect()->route('requests.show', $sr)->with('success', $message);
+        return redirect()->route('requests.show', $sr)->with('success', 'Rascunho salvo com sucesso.');
     }
 
     public function show(SupplyRequest $supplyRequest): View
@@ -96,7 +98,7 @@ class SupplyRequestController extends Controller
         return view('supply-requests.edit', compact('supplyRequest', 'costCenters', 'items'));
     }
 
-    public function update(UpdateSupplyRequestRequest $request, SupplyRequest $supplyRequest): RedirectResponse
+    public function update(UpdateSupplyRequestRequest $request, SupplyRequest $supplyRequest, RequestStatusService $statusService): RedirectResponse
     {
         $this->authorize('update', $supplyRequest);
 
@@ -107,7 +109,6 @@ class SupplyRequestController extends Controller
             'cost_center_id' => $data['cost_center_id'],
             'urgency'        => $data['urgency'],
             'notes'          => $data['notes'] ?? null,
-            'status'         => $data['action'] === 'submit' ? RequestStatus::Pending : RequestStatus::Draft,
         ]);
 
         $supplyRequest->items()->delete();
@@ -120,18 +121,19 @@ class SupplyRequestController extends Controller
             ]);
         }
 
-        $message = $data['action'] === 'submit'
-            ? 'Solicitação enviada com sucesso.'
-            : 'Rascunho salvo com sucesso.';
+        if ($data['action'] === 'submit') {
+            $statusService->submit($supplyRequest, auth()->user());
+            return redirect()->route('requests.show', $supplyRequest)->with('success', 'Solicitação enviada com sucesso.');
+        }
 
-        return redirect()->route('requests.show', $supplyRequest)->with('success', $message);
+        return redirect()->route('requests.show', $supplyRequest)->with('success', 'Rascunho salvo com sucesso.');
     }
 
-    public function submit(SupplyRequest $supplyRequest): RedirectResponse
+    public function submit(SupplyRequest $supplyRequest, RequestStatusService $statusService): RedirectResponse
     {
         $this->authorize('submit', $supplyRequest);
 
-        $supplyRequest->update(['status' => RequestStatus::Pending]);
+        $statusService->submit($supplyRequest, auth()->user());
 
         return redirect()->route('requests.show', $supplyRequest)
             ->with('success', 'Solicitação enviada com sucesso.');
@@ -146,11 +148,15 @@ class SupplyRequestController extends Controller
         return (int) $raw;
     }
 
-    public function cancelRequest(SupplyRequest $supplyRequest): RedirectResponse
+    public function cancelRequest(SupplyRequest $supplyRequest, RequestStatusService $statusService): RedirectResponse
     {
         $this->authorize('cancelRequest', $supplyRequest);
 
-        $supplyRequest->update(['status' => RequestStatus::CancelRequested]);
+        $reason = request()->validate([
+            'cancellation_reason' => ['required', 'string', 'max:1000'],
+        ])['cancellation_reason'];
+
+        $statusService->requestCancellation($supplyRequest, auth()->user(), $reason);
 
         return redirect()->route('requests.show', $supplyRequest)
             ->with('success', 'Cancelamento solicitado.');

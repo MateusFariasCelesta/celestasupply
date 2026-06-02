@@ -19,7 +19,9 @@ class SupplyRequest extends Model
         'user_id',
         'urgency',
         'status',
+        'previous_status',
         'notes',
+        'cancellation_reason',
     ];
 
     protected $casts = [
@@ -40,6 +42,11 @@ class SupplyRequest extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SupplyRequestItem::class);
+    }
+
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(RequestStatusHistory::class)->orderBy('created_at');
     }
 
     public function isDraft(): bool
