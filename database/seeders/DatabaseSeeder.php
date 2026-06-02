@@ -170,8 +170,8 @@ class DatabaseSeeder extends Seeder
 
         // 6. Em Andamento — itens em estágios variados
         $this->makeRequest($req3, $ccTi, Urgency::Medium, RequestStatus::InProgress, null, null, $now->copy()->subDays(8), [
-            ['item' => $items[10], 'qty' => 1,   'unit' => 'un',  'status' => ItemStatus::AwaitingDelivery, 'supplier' => $sup2, 'order_number' => 'PO-2026-001'],
-            ['item' => $items[11], 'qty' => 2,   'unit' => 'un',  'status' => ItemStatus::AwaitingPayment,  'supplier' => $sup2, 'order_number' => 'PO-2026-002'],
+            ['item' => $items[10], 'qty' => 1,   'unit' => 'un',  'status' => ItemStatus::AwaitingDelivery, 'supplier' => $sup2, 'order_number' => 1],
+            ['item' => $items[11], 'qty' => 2,   'unit' => 'un',  'status' => ItemStatus::AwaitingPayment,  'supplier' => $sup2, 'order_number' => 2],
             ['item' => $items[13], 'qty' => 1,   'unit' => 'un',  'status' => ItemStatus::Quoting,          'supplier' => null],
         ], [
             ['from' => null,                   'to' => RequestStatus::Draft,      'by' => $req3,   'at' => $now->copy()->subDays(8)],
@@ -181,7 +181,7 @@ class DatabaseSeeder extends Seeder
 
         // 7. Em Andamento — itens aguardando pagamento
         $this->makeRequest($req2, $ccAdm, Urgency::Low, RequestStatus::InProgress, null, null, $now->copy()->subDays(15), [
-            ['item' => $items[4],  'qty' => 4,   'unit' => 'un',  'status' => ItemStatus::AwaitingPayment, 'supplier' => $sup1, 'order_number' => 'PO-2026-003'],
+            ['item' => $items[4],  'qty' => 4,   'unit' => 'un',  'status' => ItemStatus::AwaitingPayment, 'supplier' => $sup1, 'order_number' => 3],
             ['item' => $items[5],  'qty' => 10,  'unit' => 'cx',  'status' => ItemStatus::Quoting,         'supplier' => $sup1],
         ], [
             ['from' => null,                   'to' => RequestStatus::Draft,      'by' => $req2,   'at' => $now->copy()->subDays(15)],
@@ -191,9 +191,9 @@ class DatabaseSeeder extends Seeder
 
         // 8. Em Andamento — entrega parcial
         $this->makeRequest($req4, $ccMkt, Urgency::High, RequestStatus::InProgress, null, null, $now->copy()->subDays(12), [
-            ['item' => $items[0],  'qty' => 20,  'unit' => 'resma', 'status' => ItemStatus::AwaitingDelivery, 'supplier' => $sup8, 'order_number' => 'PO-2026-004'],
-            ['item' => $items[2],  'qty' => 100, 'unit' => 'un',    'status' => ItemStatus::Received,          'supplier' => $sup8, 'order_number' => 'PO-2026-004', 'delivered_qty' => 100],
-            ['item' => $items[3],  'qty' => 30,  'unit' => 'un',    'status' => ItemStatus::AwaitingDelivery,  'supplier' => $sup8, 'order_number' => 'PO-2026-005'],
+            ['item' => $items[0],  'qty' => 20,  'unit' => 'resma', 'status' => ItemStatus::AwaitingDelivery, 'supplier' => $sup8, 'order_number' => 4],
+            ['item' => $items[2],  'qty' => 100, 'unit' => 'un',    'status' => ItemStatus::Received,          'supplier' => $sup8, 'order_number' => 4, 'delivered_qty' => 100],
+            ['item' => $items[3],  'qty' => 30,  'unit' => 'un',    'status' => ItemStatus::AwaitingDelivery,  'supplier' => $sup8, 'order_number' => 5],
         ], [
             ['from' => null,                   'to' => RequestStatus::Draft,      'by' => $req4,   'at' => $now->copy()->subDays(12)],
             ['from' => RequestStatus::Draft,   'to' => RequestStatus::Pending,    'by' => $req4,   'at' => $now->copy()->subDays(12)->addMinutes(5)],
@@ -202,8 +202,8 @@ class DatabaseSeeder extends Seeder
 
         // 9. Concluída
         $this->makeRequest($req2, $ccTi, Urgency::Low, RequestStatus::Completed, null, null, $now->copy()->subDays(40), [
-            ['item' => $items[6],  'qty' => 1,   'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup5, 'order_number' => 'PO-2025-088', 'delivered_qty' => 1],
-            ['item' => $items[7],  'qty' => 2,   'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup5, 'order_number' => 'PO-2025-088', 'delivered_qty' => 2],
+            ['item' => $items[6],  'qty' => 1,   'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup5, 'order_number' => 88, 'delivered_qty' => 1],
+            ['item' => $items[7],  'qty' => 2,   'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup5, 'order_number' => 88, 'delivered_qty' => 2],
         ], [
             ['from' => null,                    'to' => RequestStatus::Draft,      'by' => $req2,   'at' => $now->copy()->subDays(40)],
             ['from' => RequestStatus::Draft,    'to' => RequestStatus::Pending,    'by' => $req2,   'at' => $now->copy()->subDays(40)->addHours(1)],
@@ -213,8 +213,8 @@ class DatabaseSeeder extends Seeder
 
         // 10. Concluída
         $this->makeRequest($req4, $ccAdm, Urgency::Medium, RequestStatus::Completed, null, null, $now->copy()->subDays(50), [
-            ['item' => $items[14], 'qty' => 10,  'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup4, 'order_number' => 'PO-2025-071', 'delivered_qty' => 10],
-            ['item' => $items[15], 'qty' => 20,  'unit' => 'pct', 'status' => ItemStatus::Received, 'supplier' => $sup4, 'order_number' => 'PO-2025-071', 'delivered_qty' => 20],
+            ['item' => $items[14], 'qty' => 10,  'unit' => 'un',  'status' => ItemStatus::Received, 'supplier' => $sup4, 'order_number' => 71, 'delivered_qty' => 10],
+            ['item' => $items[15], 'qty' => 20,  'unit' => 'pct', 'status' => ItemStatus::Received, 'supplier' => $sup4, 'order_number' => 71, 'delivered_qty' => 20],
         ], [
             ['from' => null,                    'to' => RequestStatus::Draft,      'by' => $req4,   'at' => $now->copy()->subDays(50)],
             ['from' => RequestStatus::Draft,    'to' => RequestStatus::Pending,    'by' => $req4,   'at' => $now->copy()->subDays(50)->addMinutes(45)],

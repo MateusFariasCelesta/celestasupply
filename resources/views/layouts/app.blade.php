@@ -320,7 +320,7 @@
         /* Item statuses */
         .cs-badge-quoting         { background: #FFFBEB; color: #B45309;  border: 1px solid #FDE68A; }
         .cs-badge-awaitingPayment { background: #FFF7ED; color: #C2410C;  border: 1px solid #FED7AA; }
-        .cs-badge-awaitingPickup  { background: #FDF4DC; color: #78350F;  border: 1px solid #F0CFA0; }
+        .cs-badge-awaitingDelivery { background: #FDF4DC; color: #78350F;  border: 1px solid #F0CFA0; }
 
         .cs-badge-low    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
         .cs-badge-medium { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
@@ -511,10 +511,6 @@
            class="cs-nav-link {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
             <i class="bi bi-building"></i> Centros de Custo
         </a>
-        <a href="#"
-           class="cs-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-            <i class="bi bi-bar-chart"></i> Relatórios
-        </a>
         @endif
 
         @if(auth()->user()->isAdmin())
@@ -568,9 +564,6 @@
         <a href="{{ route('admin.costCenters.index') }}"
            class="cs-mobile-nav-link {{ request()->routeIs('admin.costCenters.*') ? 'active' : '' }}">
             <i class="bi bi-building"></i> Centros de Custo
-        </a>
-        <a href="#" class="cs-mobile-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-            <i class="bi bi-bar-chart"></i> Relatórios
         </a>
         @endif
         @if(auth()->user()->isAdmin())

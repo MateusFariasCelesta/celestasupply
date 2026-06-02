@@ -31,7 +31,7 @@ enum ItemStatus: string
             self::Pending          => 'cs-badge-pending',
             self::Quoting          => 'cs-badge-quoting',
             self::AwaitingPayment  => 'cs-badge-awaitingPayment',
-            self::AwaitingDelivery => 'cs-badge-awaitingPickup',
+            self::AwaitingDelivery => 'cs-badge-awaitingDelivery',
             self::Received         => 'cs-badge-completed',
             self::Cancelled        => 'cs-badge-cancelled',
             self::CancelRequested  => 'cs-badge-cancelRequested',

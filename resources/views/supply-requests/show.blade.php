@@ -18,7 +18,7 @@
 
 <div class="row g-4">
     {{-- Details --}}
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="cs-card h-100">
             <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Detalhes</h6>
             <dl class="mb-0" style="font-size:14px">
@@ -47,7 +47,7 @@
     </div>
 
     {{-- Items --}}
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="cs-card">
             <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
             <div class="table-responsive">
@@ -59,10 +59,8 @@
                             <th style="font-size:12px;color:#64748B;font-weight:600">Unidade</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Fornecedor</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
+                            <th style="font-size:12px;color:#64748B;font-weight:600">Nº PC</th>
                             <th style="font-size:12px;color:#64748B;font-weight:600">Obs.</th>
-                            @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Ações</th>
-                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -91,38 +89,33 @@
                                 <span style="color:#64748B">{{ $item->supplier?->name ?? '—' }}</span>
                                 @endcan
                             </td>
-                            <td>
+                            <td style="min-width:200px">
                                 <span class="cs-badge {{ $item->status->badgeClass() }}">
                                     {{ $item->status->label() }}
                                 </span>
                                 @if($item->cancel_reason)
                                 <div style="font-size:11px;color:#94A3B8;margin-top:3px">{{ $item->cancel_reason }}</div>
                                 @endif
-                            </td>
-                            <td style="font-size:13px;color:#64748B">{{ $item->notes ?? '—' }}</td>
-                            @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
-                            <td>
-                                <div class="d-flex gap-1 flex-wrap">
+
+                                @can('jumpStatus', $item)
+                                <form method="POST" action="{{ route('requests.items.jumpStatus', [$supplyRequest, $item]) }}" class="mt-2">
+                                    @csrf @method('PATCH')
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()"
+                                            style="font-size:12px;border-color:#FDE047;color:#92400E;background:#FFFBEB">
+                                        <option value="" disabled selected>⚡ Forçar para…</option>
+                                        @foreach(\App\Enums\ItemStatus::cases() as $s)
+                                            @if($s !== $item->status)
+                                            <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </form>
+                                @endcan
+
+                                @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
+                                <div class="d-flex gap-1 flex-wrap mt-2">
                                     @if(auth()->user()->isBuyerOrAdmin())
-                                        @can('jumpStatus', $item)
-                                        <form method="POST" action="{{ route('requests.items.jumpStatus', [$supplyRequest, $item]) }}"
-                                              class="d-inline-flex align-items-center gap-1">
-                                            @csrf @method('PATCH')
-                                            <select name="status" class="form-select form-select-sm"
-                                                    style="font-size:11px;width:auto;padding:2px 6px">
-                                                <option value="" disabled selected>→</option>
-                                                @foreach(\App\Enums\ItemStatus::cases() as $s)
-                                                    @if($s !== $item->status && $s !== \App\Enums\ItemStatus::Cancelled)
-                                                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                                                    @endif
-                                                @endforeach
-                                            </select>
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                                    style="font-size:11px;padding:2px 6px">
-                                                <i class="bi bi-lightning-charge"></i>
-                                            </button>
-                                        </form>
-                                        @elsecan('updateStatus', $item)
+                                        @can('updateStatus', $item)
                                         @if($item->status === \App\Enums\ItemStatus::Quoting)
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-secondary"
@@ -193,8 +186,18 @@
                                     </button>
                                     @endcan
                                 </div>
+                                @endif
                             </td>
-                            @endif
+                            <td style="font-size:13px">
+                                @if($item->order_number)
+                                <span style="font-family:monospace;font-weight:600;color:#0369A1">
+                                    PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
+                                </span>
+                                @else
+                                <span style="color:#CBD5E1">—</span>
+                                @endif
+                            </td>
+                            <td style="font-size:13px;color:#64748B">{{ $item->notes ?? '—' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -236,27 +239,7 @@
     </form>
     @endcan
 
-    {{-- Admin: saltar para qualquer status --}}
-    @can('jumpStatus', $supplyRequest)
-    <form method="POST" action="{{ route('requests.jumpStatus', $supplyRequest) }}"
-          class="d-inline-flex align-items-center gap-2">
-        @csrf
-        <select name="status" class="form-select form-select-sm" style="width:auto;font-size:13px">
-            <option value="" disabled selected>Ir para…</option>
-            @foreach(\App\Enums\RequestStatus::cases() as $s)
-                @if($s !== \App\Enums\RequestStatus::Draft && $s !== $supplyRequest->status)
-                <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                @endif
-            @endforeach
-        </select>
-        <button type="submit" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-lightning-charge me-1"></i>Forçar
-        </button>
-    </form>
-    @endcan
-
-    {{-- Buyer (não admin): avançar status no fluxo normal --}}
-    @if(!auth()->user()->isAdmin())
+    {{-- Buyer/Admin: avançar status no fluxo normal --}}
     @can('advanceStatus', $supplyRequest)
     @php
         $isCompleting = $supplyRequest->status === \App\Enums\RequestStatus::InProgress;
@@ -273,7 +256,6 @@
         </button>
     </form>
     @endcan
-    @endif
 
     {{-- Comprador: cancelar diretamente --}}
     @can('cancelDirect', $supplyRequest)
@@ -315,6 +297,34 @@
     @endcan
 </div>
 
+{{-- Painel admin: forçar status da solicitação --}}
+@can('jumpStatus', $supplyRequest)
+<div class="mt-3 rounded-3 p-3 d-flex align-items-center gap-3 flex-wrap"
+     style="background:#FFFBEB;border:1.5px solid #FDE047">
+    <div class="d-flex align-items-center gap-2" style="color:#92400E">
+        <i class="bi bi-lightning-charge-fill fs-5"></i>
+        <span style="font-size:13px;font-weight:700;letter-spacing:.02em">Controle Admin</span>
+    </div>
+    <form method="POST" action="{{ route('requests.jumpStatus', $supplyRequest) }}"
+          class="d-flex align-items-center gap-2 flex-grow-1">
+        @csrf
+        <select name="status" class="form-select"
+                style="font-size:14px;border-color:#FDE047;color:#92400E;background:#fff;max-width:240px">
+            <option value="" disabled selected>Forçar status para…</option>
+            @foreach(\App\Enums\RequestStatus::cases() as $s)
+                @if($s !== \App\Enums\RequestStatus::Draft && $s !== $supplyRequest->status)
+                <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                @endif
+            @endforeach
+        </select>
+        <button type="submit" class="btn fw-semibold"
+                style="background:#FEF08A;border-color:#FDE047;color:#7C2D12">
+            <i class="bi bi-lightning-charge-fill me-1"></i>Forçar
+        </button>
+    </form>
+</div>
+@endcan
+
 @endsection
 
 @if(auth()->user()->isBuyerOrAdmin())
@@ -334,11 +344,14 @@
                         Item: <strong id="orderNumberItemName"></strong>
                     </p>
                     <label for="order_number_input" class="form-label fw-semibold">
-                        Nº do Pedido / PO <span class="text-danger">*</span>
+                        Nº do Pedido<span class="text-danger">*</span>
                     </label>
-                    <input type="text" id="order_number_input" name="order_number"
-                           class="form-control" maxlength="100" required
-                           placeholder="Ex: PO-2026-001">
+                    <div class="input-group">
+                        <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1">PC-</span>
+                        <input type="number" id="order_number_input" name="order_number"
+                               class="form-control" min="1" max="9999" required
+                               placeholder="0001" style="font-family:monospace">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>

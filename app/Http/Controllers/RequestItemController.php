@@ -25,7 +25,7 @@ class RequestItemController extends Controller
         $extra = [];
         if ($supplyRequestItem->status === ItemStatus::Quoting) {
             $extra = $request->validate([
-                'order_number' => ['required', 'string', 'max:100'],
+                'order_number' => ['required', 'integer', 'min:1'],
             ]);
         }
 
@@ -60,7 +60,14 @@ class RequestItemController extends Controller
         ]);
 
         $to = ItemStatus::from($data['status']);
-        $supplyRequestItem->update(['status' => $to]);
+
+        $keepReason = in_array($to, [ItemStatus::Cancelled, ItemStatus::CancelRequested]);
+
+        $supplyRequestItem->update([
+            'status'          => $to,
+            'cancel_reason'   => $keepReason ? $supplyRequestItem->cancel_reason : null,
+            'previous_status' => $keepReason ? $supplyRequestItem->previous_status : null,
+        ]);
 
         $this->autoAdvanceRequest($supplyRequest);
 

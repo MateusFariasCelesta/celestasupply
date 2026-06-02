@@ -70,7 +70,6 @@ class RequestStatusService
             ? RequestStatus::from($sr->previous_status)
             : RequestStatus::Pending;
 
-        $sr->update(['cancellation_reason' => null]);
         $this->transition($sr, $restoreTo, $actor);
     }
 
@@ -80,9 +79,12 @@ class RequestStatusService
 
         $this->cascadeItemStatuses($sr, $to);
 
+        $keepReason = in_array($to, [RequestStatus::Cancelled, RequestStatus::CancelRequested]);
+
         $sr->update([
-            'previous_status' => $from->value,
-            'status'          => $to,
+            'previous_status'     => $from->value,
+            'status'              => $to,
+            'cancellation_reason' => $keepReason ? $sr->cancellation_reason : null,
         ]);
 
         RequestStatusHistory::create([

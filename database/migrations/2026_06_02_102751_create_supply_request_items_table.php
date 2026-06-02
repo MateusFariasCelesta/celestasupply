@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('unit')->nullable();
             $table->text('notes')->nullable();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
-            $table->string('order_number', 100)->nullable();
+            $table->unsignedInteger('order_number')->nullable();
             $table->enum('status', ['pending', 'quoting', 'awaitingPayment', 'awaitingDelivery', 'received', 'cancelled', 'cancelRequested'])->default('pending');
             $table->decimal('delivered_quantity', 10, 3)->default(0);
             $table->text('cancel_reason')->nullable();

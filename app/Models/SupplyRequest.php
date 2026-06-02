@@ -49,8 +49,4 @@ class SupplyRequest extends Model
         return $this->hasMany(RequestStatusHistory::class)->orderBy('created_at');
     }
 
-    public function isDraft(): bool
-    {
-        return $this->status === RequestStatus::Draft;
-    }
 }
