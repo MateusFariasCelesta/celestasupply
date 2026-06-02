@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateSupplyRequestRequest;
 use App\Models\CostCenter;
 use App\Models\Item;
 use App\Models\SupplyRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -17,28 +18,20 @@ class SupplyRequestController extends Controller
     {
         $this->authorize('viewAny', SupplyRequest::class);
 
-        $query = SupplyRequest::with(['costCenter', 'user'])
+        $query = SupplyRequest::with(['costCenter', 'user', 'items.item'])
             ->orderByDesc('created_at');
 
         if (!auth()->user()->isBuyerOrAdmin()) {
             $query->where('user_id', auth()->id());
         }
 
-        // Filters
-        if (request('status')) {
-            $query->where('status', request('status'));
-        }
-        if (request('urgency')) {
-            $query->where('urgency', request('urgency'));
-        }
-        if (request('cost_center_id')) {
-            $query->where('cost_center_id', request('cost_center_id'));
-        }
-
-        $supplyRequests = $query->paginate(20)->withQueryString();
+        $supplyRequests = $query->get();
         $costCenters    = CostCenter::where('isActive', true)->orderBy('name')->get();
+        $requesters     = auth()->user()->isBuyerOrAdmin()
+            ? User::where('isActive', true)->orderBy('name')->get(['id', 'name'])
+            : collect();
 
-        return view('supply-requests.index', compact('supplyRequests', 'costCenters'));
+        return view('supply-requests.index', compact('supplyRequests', 'costCenters', 'requesters'));
     }
 
     public function create(): View

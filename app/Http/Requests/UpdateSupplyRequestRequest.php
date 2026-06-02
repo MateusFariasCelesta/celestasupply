@@ -21,8 +21,8 @@ class UpdateSupplyRequestRequest extends FormRequest
             'action'         => ['required', 'in:draft,submit'],
             'items'          => ['required', 'array', 'min:1'],
             'items.*.item_id'  => ['required', 'string'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit'     => ['nullable', 'string', 'max:50'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.unit'     => ['required', 'string', 'max:50'],
             'items.*.notes'    => ['nullable', 'string'],
         ];
     }

@@ -24,7 +24,8 @@ class SupplyRequestItem extends Model
 
     protected $casts = [
         'status'     => ItemStatus::class,
-        'unit_price' => 'decimal:2',
+        'quantity'    => 'decimal:3',
+        'unit_price'  => 'decimal:2',
         'total_price' => 'decimal:2',
     ];
 

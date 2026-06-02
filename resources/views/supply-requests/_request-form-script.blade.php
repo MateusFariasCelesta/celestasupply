@@ -1,9 +1,8 @@
 @push('scripts')
 <script>
 (function () {
-    // Catálogo carregado pelo PHP — busca client-side, sem fetch
-    const CATALOG = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name])->values());
-
+    const CATALOG  = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name])->values());
+    const ADD_URL  = '{{ route('items.create') }}';
     let rowCount = 0;
 
     function esc(str) {
@@ -11,27 +10,66 @@
     }
 
     function buildRow(idx, data = {}) {
+        const hasItem   = !!(data.item_id);
+        const labelText = data.item_name || 'Selecionar item...';
+        const labelColor = hasItem ? '#0F172A' : '#94A3B8';
+
         const tr = document.createElement('tr');
         tr.dataset.rowIdx = idx;
         tr.innerHTML = `
             <td>
-                <div style="position:relative">
-                    <input type="text"
-                           class="form-control form-control-sm js-search"
-                           placeholder="Buscar item..."
-                           autocomplete="off"
-                           value="${esc(data.item_name || '')}">
+                <div class="js-picker" style="position:relative">
+                    <div class="js-btn form-control form-control-sm d-flex align-items-center justify-content-between"
+                         style="cursor:pointer;user-select:none" tabindex="0">
+                        <span class="js-label" style="color:${labelColor};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(labelText)}</span>
+                        <i class="bi bi-chevron-down js-chevron" style="font-size:11px;color:#94A3B8;flex-shrink:0;margin-left:6px"></i>
+                    </div>
                     <input type="hidden" name="items[${idx}][item_id]" class="js-id" value="${esc(data.item_id || '')}">
-                    <div class="js-drop" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:200;background:#fff;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;min-width:220px"></div>
+
+                    <div class="js-panel" style="display:none;position:absolute;top:calc(100% + 2px);left:0;z-index:300;background:#fff;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.13);width:100%;min-width:240px">
+                        <div style="padding:6px 8px">
+                            <input type="text" class="form-control form-control-sm js-search" placeholder="Filtrar..." autocomplete="off">
+                        </div>
+                        <div class="js-list" style="max-height:180px;overflow-y:auto"></div>
+                        <div style="border-top:1px solid #E2E8F0;padding:6px 10px">
+                            <button type="button" class="js-create-btn"
+                                    style="display:none;background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:#3B82F6;align-items:center;gap:5px">
+                                <i class="bi bi-plus-circle"></i>
+                                <span class="js-create-label"></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </td>
-            <td><input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm" min="1" value="${esc(data.quantity || 1)}" required></td>
-            <td><input type="text"   name="items[${idx}][unit]"     class="form-control form-control-sm" placeholder="un, kg, L…" value="${esc(data.unit  || '')}"></td>
-            <td><input type="text"   name="items[${idx}][notes]"    class="form-control form-control-sm" placeholder="Opcional"   value="${esc(data.notes || '')}"></td>
-            <td><button type="button" class="btn btn-sm btn-outline-danger js-rm" title="Remover"><i class="bi bi-trash"></i></button></td>
+            <td>
+                <div style="position:relative">
+                    <div class="js-qty-err" style="display:none;position:absolute;bottom:calc(100% + 3px);left:0;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-size:11px;padding:2px 7px;border-radius:4px;white-space:nowrap;z-index:50">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Quantidade inválida
+                    </div>
+                    <input type="number" name="items[${idx}][quantity]"
+                           class="form-control form-control-sm js-qty" min="0" step="any"
+                           value="${esc(data.quantity || 1)}" required>
+                </div>
+            </td>
+            <td>
+                <div style="position:relative">
+                    <div class="js-unit-err" style="display:none;position:absolute;bottom:calc(100% + 3px);left:0;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-size:11px;padding:2px 7px;border-radius:4px;white-space:nowrap;z-index:50">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Unidade obrigatória
+                    </div>
+                    <input type="text" name="items[${idx}][unit]"
+                           class="form-control form-control-sm js-unit" placeholder="un, kg, L…"
+                           value="${esc(data.unit || '')}">
+                </div>
+            </td>
+            <td><input type="text" name="items[${idx}][notes]"
+                       class="form-control form-control-sm" placeholder="Opcional"
+                       value="${esc(data.notes || '')}"></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger js-rm" title="Remover">
+                    <i class="bi bi-trash"></i>
+                </button></td>
         `;
 
-        wireAuto(tr);
+        wirePicker(tr);
 
         tr.querySelector('.js-rm').addEventListener('click', function () {
             if (document.querySelectorAll('#items-tbody tr').length > 1) {
@@ -54,67 +92,170 @@
         btns.forEach(b => b.style.display = btns.length > 1 ? '' : 'none');
     }
 
-    function wireAuto(tr) {
-        const inp  = tr.querySelector('.js-search');
-        const hid  = tr.querySelector('.js-id');
-        const drop = tr.querySelector('.js-drop');
+    function wirePicker(tr) {
+        const btn       = tr.querySelector('.js-btn');
+        const label     = tr.querySelector('.js-label');
+        const hid       = tr.querySelector('.js-id');
+        const panel     = tr.querySelector('.js-panel');
+        const search    = tr.querySelector('.js-search');
+        const list      = tr.querySelector('.js-list');
+        const createBtn = tr.querySelector('.js-create-btn');
+        const createLbl = tr.querySelector('.js-create-label');
 
-        inp.addEventListener('input',   () => { hid.value = ''; render(inp.value); });
-        inp.addEventListener('focus',   () => { if (inp.value.trim().length >= 2 && !hid.value) render(inp.value); });
-        inp.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
-        document.addEventListener('click', e => { if (!tr.contains(e.target)) hide(); });
+        function open() {
+            renderList('');
+            panel.style.display = 'block';
+            search.value = '';
+            setTimeout(() => search.focus(), 0);
+        }
 
-        function hide() { drop.style.display = 'none'; drop.innerHTML = ''; }
+        function close() {
+            panel.style.display = 'none';
+        }
 
-        function render(raw) {
-            const q = raw.trim();
-            if (q.length < 2) { hide(); return; }
+        function createNew(name) {
+            name = name.trim();
+            if (!name) return;
+            if (!CATALOG.find(i => i.name.toLowerCase() === name.toLowerCase()))
+                CATALOG.push({ id: 'new:' + name, name });
+            selectItem({ id: 'new:' + name, name });
+        }
 
-            const hits = CATALOG.filter(i => i.name.toLowerCase().includes(q.toLowerCase())).slice(0, 10);
-            drop.innerHTML = '';
+        function selectItem(item) {
+            hid.value         = String(item.id);
+            label.textContent = item.name;
+            label.style.color = '#0F172A';
+            close();
+            addRow();
+            const rows = document.querySelectorAll('#items-tbody tr');
+            setTimeout(() => rows[rows.length - 1]?.querySelector('.js-btn')?.focus(), 0);
+        }
 
-            if (hits.length) {
-                hits.forEach(item => {
-                    const d = document.createElement('div');
-                    d.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px';
-                    d.innerHTML = `<i class="bi bi-box" style="color:#94A3B8;font-size:12px"></i>${esc(item.name)}`;
-                    d.addEventListener('mouseenter', () => d.style.background = '#F1F5F9');
-                    d.addEventListener('mouseleave', () => d.style.background = '');
-                    d.addEventListener('mousedown', e => {
-                        e.preventDefault();
-                        hid.value = item.id;
-                        inp.value = item.name;
-                        hide();
-                    });
-                    drop.appendChild(d);
-                });
-            } else {
-                const d = document.createElement('div');
-                d.style.cssText = 'padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-                d.innerHTML = `<span style="font-size:13px;color:#64748B">Nenhum resultado.</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:12px">
-                        <i class="bi bi-plus"></i> Adicionar "${esc(q)}"
-                    </button>`;
-                d.querySelector('button').addEventListener('mousedown', e => {
-                    e.preventDefault();
-                    // Prefixo "new:" indica ao servidor para criar via firstOrCreate
-                    hid.value = 'new:' + q;
-                    inp.value = q;
-                    // Adiciona ao catálogo local para não aparecer como "não encontrado" se buscar de novo
-                    if (!CATALOG.find(i => i.name.toLowerCase() === q.toLowerCase())) {
-                        CATALOG.push({ id: 'new:' + q, name: q });
-                    }
-                    hide();
-                });
-                drop.appendChild(d);
+        function renderList(q) {
+            const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            const hits  = terms.length
+                ? CATALOG.filter(i => terms.every(t => i.name.toLowerCase().includes(t))).slice(0, 25)
+                : CATALOG.slice(0, 25);
+
+            list.innerHTML = '';
+
+            if (!hits.length) {
+                list.innerHTML = '<div style="padding:8px 12px;font-size:13px;color:#94A3B8">Nenhum resultado.</div>';
+                return;
             }
 
-            drop.style.display = 'block';
+            hits.forEach(function (item) {
+                const d = document.createElement('div');
+                d.tabIndex = 0;
+                d.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;outline:none';
+                d.innerHTML = `<i class="bi bi-box" style="color:#94A3B8;font-size:12px;flex-shrink:0"></i>${esc(item.name)}`;
+                const hi = () => d.style.background = '#F1F5F9';
+                const lo = () => d.style.background = '';
+                d.addEventListener('mouseenter', hi); d.addEventListener('focus', hi);
+                d.addEventListener('mouseleave', lo); d.addEventListener('blur',  lo);
+                d.addEventListener('mousedown', e => { e.preventDefault(); selectItem(item); });
+                d.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); selectItem(item); return; }
+                    if (e.key === 'Escape') { close(); btn.focus(); return; }
+                    const all = Array.from(list.querySelectorAll('[tabindex="0"]'));
+                    const idx = all.indexOf(d);
+                    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+                        e.preventDefault();
+                        idx < all.length - 1 ? all[idx + 1].focus() : search.focus();
+                    }
+                    if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+                        e.preventDefault();
+                        idx > 0 ? all[idx - 1].focus() : search.focus();
+                    }
+                });
+                list.appendChild(d);
+            });
         }
+
+        // Abre/fecha ao clicar no botão
+        btn.addEventListener('click', () => panel.style.display === 'none' ? open() : close());
+        btn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+            if (e.key === 'Escape') close();
+        });
+
+        // Filtra ao digitar na busca
+        search.addEventListener('input', function () {
+            const q = search.value.trim();
+            renderList(search.value);
+            if (q) {
+                createLbl.textContent = `Criar "${q}"`;
+                createBtn.style.display = 'flex';
+            } else {
+                createBtn.style.display = 'none';
+            }
+        });
+        search.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { close(); btn.focus(); return; }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const first = list.querySelector('[tabindex="0"]');
+                if (first) first.focus();
+                return;
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const first = list.querySelector('[tabindex="0"]');
+                if (first) first.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                else createNew(search.value);
+            }
+        });
+        createBtn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            createNew(search.value);
+        });
+
+        // Fecha ao clicar fora
+        document.addEventListener('click', e => { if (!tr.contains(e.target)) close(); });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Valida e limpa antes de submeter
+        document.getElementById('items-tbody')?.closest('form')?.addEventListener('submit', function (e) {
+            // Limpa alertas anteriores
+            document.querySelectorAll('#items-tbody .js-qty-err, #items-tbody .js-unit-err').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#items-tbody .js-qty, #items-tbody .js-unit').forEach(el => el.classList.remove('is-invalid'));
+
+            let hasError = false;
+            document.querySelectorAll('#items-tbody tr').forEach(function (row) {
+                const hasItem = !!row.querySelector('.js-id')?.value;
+                if (!hasItem) return;
+
+                const qtyInp  = row.querySelector('.js-qty');
+                const unitInp = row.querySelector('.js-unit');
+                const qty     = parseFloat(qtyInp?.value);
+
+                if (isNaN(qty) || qty <= 0) {
+                    qtyInp.classList.add('is-invalid');
+                    row.querySelector('.js-qty-err').style.display = 'block';
+                    hasError = true;
+                }
+                if (!unitInp?.value.trim()) {
+                    unitInp.classList.add('is-invalid');
+                    row.querySelector('.js-unit-err').style.display = 'block';
+                    hasError = true;
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation(); // impede o handler global de desabilitar os botões
+                return;
+            }
+
+            // Remove linhas sem item selecionado
+            document.querySelectorAll('#items-tbody tr').forEach(function (row) {
+                if (!row.querySelector('.js-id')?.value) row.remove();
+            });
+        });
+
         document.getElementById('btn-add-row').addEventListener('click', () => addRow());
+
         const rows = window.__initialItemRows || [];
         rows.length ? rows.forEach(r => addRow(r)) : addRow();
     });
