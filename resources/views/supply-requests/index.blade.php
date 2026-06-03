@@ -4,9 +4,19 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="cs-page-title mb-0">Solicitações</h1>
-    <a href="{{ route('requests.create') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
-        <i class="bi bi-plus-lg"></i> Nova Solicitação
-    </a>
+    <div class="d-flex gap-2">
+        @if(auth()->user()->isBuyerOrAdmin())
+        <button id="btn-export-excel" class="btn btn-sm fw-semibold" style="background:#217346;color:#fff;border:none;border-radius:6px">
+            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+        </button>
+        <button id="btn-export-pdf" class="btn btn-sm fw-semibold" style="background:#DC2626;color:#fff;border:none;border-radius:6px">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </button>
+        @endif
+        <a href="{{ route('requests.create') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i> Nova Solicitação
+        </a>
+    </div>
 </div>
 
 {{-- Busca --}}
@@ -311,6 +321,45 @@
             rows.forEach(function (row) { tbody.appendChild(row); });
             filter();
         });
+    });
+
+    // ── Export com filtros actuais ──
+    function buildExportUrl(base) {
+        const params = new URLSearchParams();
+
+        const q = document.getElementById('f-q')?.value.trim();
+        if (q) params.append('q', q);
+
+        document.querySelectorAll('.f-status-cb:checked').forEach(function (cb) {
+            params.append('status[]', cb.value);
+        });
+
+        const urgency = document.getElementById('f-urgency')?.value;
+        if (urgency) params.append('urgency', urgency);
+
+        const cc = document.getElementById('f-cc')?.value;
+        if (cc) params.append('cost_center_id', cc);
+
+        const user = document.getElementById('f-user')?.value;
+        if (user) params.append('user_id', user);
+
+        const from = document.getElementById('f-from')?.value;
+        if (from) params.append('from', from);
+
+        const to = document.getElementById('f-to')?.value;
+        if (to) params.append('to', to);
+
+        return base + '?' + params.toString();
+    }
+
+    const excelBase = '{{ route("reports.export.excel") }}';
+    const pdfBase   = '{{ route("reports.export.pdf") }}';
+
+    document.getElementById('btn-export-excel')?.addEventListener('click', function () {
+        window.open(buildExportUrl(excelBase), '_blank');
+    });
+    document.getElementById('btn-export-pdf')?.addEventListener('click', function () {
+        window.open(buildExportUrl(pdfBase), '_blank');
     });
 })();
 </script>

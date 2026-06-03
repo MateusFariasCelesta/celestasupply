@@ -202,7 +202,7 @@ $statusCards = [
                 <tr style="cursor:pointer" onclick="window.location='{{ route('requests.show', $sr) }}'">
                     <td>
                         <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
-                            {{ $sr->code ?? $sr->name }}
+                            {{ $sr->code }}
                         </span>
                     </td>
                     <td style="font-size:14px;font-weight:500">{{ $sr->title }}</td>

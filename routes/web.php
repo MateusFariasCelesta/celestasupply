@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExternalOrderController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ItemAttachmentController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
@@ -66,6 +67,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);
     Route::get('lookup/items', [ItemController::class, 'search'])->name('items.suggest');
     Route::post('lookup/items', [ItemController::class, 'apiStore'])->name('items.inline');
+
+    // Reports export (buyer + admin)
+    Route::get('reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+    Route::get('reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
 
     // Suppliers (buyer + admin)
     Route::resource('suppliers', SupplierController::class)->except(['show', 'destroy']);
