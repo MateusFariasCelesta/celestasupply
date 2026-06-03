@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\ExternalOrderController;
+use App\Http\Controllers\ItemAttachmentController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RequestAttachmentController;
 use App\Http\Controllers\RequestItemController;
 use App\Http\Controllers\RequestManagementController;
 use App\Http\Controllers\SupplierController;
@@ -42,6 +45,24 @@ Route::middleware('auth')->group(function () {
     Route::post('requests/{supplyRequest}/jump-status', [RequestManagementController::class, 'jumpStatus'])->name('requests.jumpStatus');
     Route::post('requests/{supplyRequest}/approve-cancellation', [RequestManagementController::class, 'approveCancellation'])->name('requests.approveCancellation');
     Route::post('requests/{supplyRequest}/refuse-cancellation', [RequestManagementController::class, 'refuseCancellation'])->name('requests.refuseCancellation');
+
+    // Item attachments (one per item)
+    Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/attachment', [ItemAttachmentController::class, 'store'])->name('requests.items.attachment.store');
+    Route::delete('requests/{supplyRequest}/items/{supplyRequestItem}/attachment', [ItemAttachmentController::class, 'destroy'])->name('requests.items.attachment.destroy');
+    Route::get('requests/{supplyRequest}/items/{supplyRequestItem}/attachment/download', [ItemAttachmentController::class, 'download'])->name('requests.items.attachment.download');
+    Route::get('requests/{supplyRequest}/items/{supplyRequestItem}/attachment/view', [ItemAttachmentController::class, 'view'])->name('requests.items.attachment.view');
+
+    // Request attachments (multiple per request)
+    Route::post('requests/{supplyRequest}/attachments', [RequestAttachmentController::class, 'store'])->name('requests.attachments.store');
+    Route::delete('requests/{supplyRequest}/attachments/{requestAttachment}', [RequestAttachmentController::class, 'destroy'])->name('requests.attachments.destroy');
+    Route::get('requests/{supplyRequest}/attachments/{requestAttachment}/download', [RequestAttachmentController::class, 'download'])->name('requests.attachments.download');
+    Route::get('requests/{supplyRequest}/attachments/{requestAttachment}/view', [RequestAttachmentController::class, 'view'])->name('requests.attachments.view');
+
+    // External orders
+    Route::post('requests/{supplyRequest}/external-orders', [ExternalOrderController::class, 'store'])->name('requests.external-orders.store');
+    Route::delete('requests/{supplyRequest}/external-orders/{externalOrder}', [ExternalOrderController::class, 'destroy'])->name('requests.external-orders.destroy');
+    Route::get('requests/{supplyRequest}/external-orders/{externalOrder}/download', [ExternalOrderController::class, 'download'])->name('requests.external-orders.download');
+    Route::get('requests/{supplyRequest}/external-orders/{externalOrder}/view', [ExternalOrderController::class, 'view'])->name('requests.external-orders.view');
 
     // Items
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);

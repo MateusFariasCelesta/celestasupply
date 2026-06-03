@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ItemStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SupplyRequestItem extends Model
 {
@@ -42,5 +43,10 @@ class SupplyRequestItem extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function attachment(): HasOne
+    {
+        return $this->hasOne(ItemAttachment::class);
     }
 }

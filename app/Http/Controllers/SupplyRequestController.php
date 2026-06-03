@@ -86,7 +86,16 @@ class SupplyRequestController extends Controller
     {
         $this->authorize('view', $supplyRequest);
 
-        $supplyRequest->load(['costCenter', 'user', 'items.item', 'items.supplier', 'statusHistory.changedBy']);
+        $supplyRequest->load([
+            'costCenter',
+            'user',
+            'items.item',
+            'items.supplier',
+            'items.attachment.uploadedBy',
+            'attachments.uploadedBy',
+            'externalOrders.registeredBy',
+            'statusHistory.changedBy',
+        ]);
 
         $suppliers = auth()->user()->isBuyerOrAdmin()
             ? \App\Models\Supplier::where('isActive', true)->orderBy('name')->get(['id', 'name'])

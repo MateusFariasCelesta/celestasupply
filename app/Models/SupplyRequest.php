@@ -49,4 +49,13 @@ class SupplyRequest extends Model
         return $this->hasMany(RequestStatusHistory::class)->orderBy('created_at');
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(RequestAttachment::class);
+    }
+
+    public function externalOrders(): HasMany
+    {
+        return $this->hasMany(ExternalOrder::class)->orderBy('created_at');
+    }
 }
