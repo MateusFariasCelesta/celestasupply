@@ -35,7 +35,7 @@
         /* ── Navbar ── */
         .cs-navbar {
             background: linear-gradient(135deg, #0A1628 0%, #0F2044 60%, #152848 100%);
-            height: 60px;
+            height: 72px;
             padding: 0 28px;
             display: flex;
             align-items: stretch;
@@ -60,12 +60,19 @@
             letter-spacing: .02em;
             white-space: nowrap;
             flex-shrink: 0;
+            transition: opacity .2s;
         }
+        .cs-brand:hover { opacity: .85; }
 
         .cs-brand i {
-            font-size: 20px;
+            font-size: 21px;
             color: #60A5FA;
             filter: drop-shadow(0 0 6px rgba(96,165,250,.5));
+            transition: transform .25s cubic-bezier(.34,1.56,.64,1), filter .25s;
+        }
+        .cs-brand:hover i {
+            transform: scale(1.18) rotate(-8deg);
+            filter: drop-shadow(0 0 10px rgba(96,165,250,.8));
         }
 
         .cs-nav {
@@ -79,28 +86,42 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            padding: 0 14px;
+            padding: 0 15px;
             border-bottom: 2px solid transparent;
             color: rgba(255,255,255,.5);
             text-decoration: none;
             font-size: 13px;
             font-weight: 500;
-            transition: color .15s, background .15s, border-color .15s;
             white-space: nowrap;
+            position: relative;
+            /* fill left→right via background slide */
+            background-image: linear-gradient(to right, rgba(255,255,255,.08) 50%, transparent 50%);
+            background-size: 202% 100%;
+            background-position: 100% center;
+            transition: color .2s, border-color .2s,
+                        background-position .28s cubic-bezier(.4,0,.2,1),
+                        transform .2s cubic-bezier(.34,1.56,.64,1);
         }
 
         .cs-nav-link:hover {
-            color: rgba(255,255,255,.85);
-            background: rgba(255,255,255,.05);
+            color: rgba(255,255,255,.92);
+            background-position: 0% center;
+            transform: scale(1.06);
+            z-index: 1;
         }
 
         .cs-nav-link.active {
             color: #fff;
             border-bottom-color: #3B82F6;
-            background: rgba(59,130,246,.07);
+            background-image: linear-gradient(to right, rgba(59,130,246,.13) 50%, rgba(59,130,246,.09) 50%);
+            background-position: 0% center;
         }
 
-        .cs-nav-link i { font-size: 14px; }
+        .cs-nav-link i {
+            font-size: 14px;
+            transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+        }
+        .cs-nav-link:hover i { transform: scale(1.22); }
 
         /* Dropdown */
         .cs-dropdown { position: relative; }
@@ -152,8 +173,8 @@
         }
 
         .cs-avatar {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             display: flex;
@@ -164,6 +185,12 @@
             color: #fff;
             flex-shrink: 0;
             box-shadow: 0 0 0 2px rgba(59,130,246,.35), 0 2px 8px rgba(37,99,235,.4);
+            transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+            cursor: default;
+        }
+        .cs-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.5), 0 4px 14px rgba(37,99,235,.5);
         }
 
         .cs-user-info { line-height: 1.3; }
@@ -227,9 +254,11 @@
             font-family: inherit;
             font-weight: 500;
             letter-spacing: .01em;
-            border-radius: 4px;
-            transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+            border-radius: 6px;
+            transition: background .18s, color .18s, border-color .18s, box-shadow .2s, transform .15s cubic-bezier(.34,1.56,.64,1);
         }
+        .btn:hover  { transform: translateY(-2px); }
+        .btn:active { transform: translateY(0) scale(.97); transition-duration: .08s; }
 
         .btn-primary {
             background: transparent;
@@ -237,15 +266,25 @@
             color: var(--cs-accent);
             font-weight: 600;
             box-shadow: none;
+            position: relative;
+            overflow: hidden;
         }
-
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 55%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+            transition: left .45s ease;
+            pointer-events: none;
+        }
         .btn-primary:hover, .btn-primary:focus-visible {
             background: var(--cs-accent);
             border-color: var(--cs-accent);
             color: #fff;
-            box-shadow: 0 2px 10px rgba(37,99,235,.2);
+            box-shadow: 0 4px 18px rgba(37,99,235,.3);
         }
-
+        .btn-primary:hover::after { left: 150%; }
         .btn-primary:active {
             background: var(--cs-accent-dark);
             border-color: var(--cs-accent-dark);
@@ -257,26 +296,26 @@
             background: transparent;
             border-color: #CBD5E1;
             color: #64748B;
-            border-radius: 4px;
+            border-radius: 6px;
         }
-
         .btn-outline-secondary:hover {
             background: #F1F5F9;
             border-color: #94A3B8;
             color: #334155;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
         }
 
         .btn-outline-danger {
             background: transparent;
             border-color: #FCA5A5;
             color: #DC2626;
-            border-radius: 4px;
+            border-radius: 6px;
         }
-
         .btn-outline-danger:hover {
             background: #FEF2F2;
             border-color: #EF4444;
             color: #B91C1C;
+            box-shadow: 0 2px 8px rgba(239,68,68,.15);
         }
 
         /* ── Form controls ── */
@@ -359,7 +398,7 @@
         /* ── Toast ── */
         .cs-toast-wrap {
             position: fixed;
-            top: 72px;
+            top: 84px;
             right: 20px;
             z-index: 9999;
             display: flex;
@@ -431,7 +470,7 @@
         /* ── Mobile menu ── */
         .cs-mobile-menu {
             position: fixed;
-            top: 60px;
+            top: 72px;
             left: 0;
             right: 0;
             background: linear-gradient(160deg, #0A1628 0%, #0F2044 100%);

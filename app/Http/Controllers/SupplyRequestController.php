@@ -26,7 +26,8 @@ class SupplyRequestController extends Controller
 
         if (!auth()->user()->isBuyerOrAdmin()) {
             $query->where('user_id', auth()->id());
-        } else {
+        } elseif (!auth()->user()->isAdmin()) {
+            // buyer: vê tudo exceto rascunhos de outros usuários
             $query->where(function ($q) {
                 $q->where('status', '!=', RequestStatus::Draft->value)
                   ->orWhere('user_id', auth()->id());

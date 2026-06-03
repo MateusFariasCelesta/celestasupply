@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\RequestStatus;
 use App\Enums\Urgency;
+use App\Models\CostCenter;
 use App\Models\SupplyRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -12,14 +13,15 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         return $user->isBuyerOrAdmin()
-            ? $this->buyerAdminView($user)
+            ? $this->buyerAdminView()
             : $this->requesterView($user);
     }
 
-    private function requesterView($user)
+    private function requesterView(\App\Models\User $user)
     {
         $counts = SupplyRequest::where('user_id', $user->id)
             ->selectRaw('status, count(*) as total')
@@ -35,7 +37,7 @@ class DashboardController extends Controller
         return view('dashboard.index', compact('counts', 'recent'));
     }
 
-    private function buyerAdminView($user)
+    private function buyerAdminView()
     {
         $byStatus = SupplyRequest::selectRaw('status, count(*) as total')
             ->groupBy('status')
@@ -46,12 +48,25 @@ class DashboardController extends Controller
         $urgentOpenCount      = SupplyRequest::where('urgency', Urgency::High->value)
             ->whereNotIn('status', [RequestStatus::Completed->value, RequestStatus::Cancelled->value])
             ->count();
+        $completedThisMonth   = SupplyRequest::where('status', RequestStatus::Completed->value)
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->count();
 
-        [$chartLabels, $chartData] = $this->requestsByMonth();
+        $costCenters = CostCenter::where('isActive', true)->orderBy('name')->get();
+
+        // Build 12-month labels once; one dataset per cost center + "all"
+        $months      = collect(range(0, 11))->map(fn($i) => now()->subMonths(11 - $i)->format('Y-m'));
+        $chartLabels = $this->monthLabels($months);
+
+        $chartDatasets = ['' => $this->monthlyData($months)];
+        foreach ($costCenters as $cc) {
+            $chartDatasets[$cc->id] = $this->monthlyData($months, $cc->id);
+        }
 
         return view('dashboard.index', compact(
             'pendingCount', 'cancelRequestedCount', 'urgentOpenCount',
-            'byStatus', 'chartLabels', 'chartData'
+            'completedThisMonth', 'byStatus', 'chartLabels', 'chartDatasets', 'costCenters'
         ));
     }
 
@@ -65,18 +80,20 @@ class DashboardController extends Controller
         })->toArray();
     }
 
-    private function requestsByMonth(): array
+    private function monthlyData(Collection $months, ?string $costCenterId = null): array
     {
-        $months = collect(range(0, 11))->map(fn($i) => now()->subMonths(11 - $i)->format('Y-m'));
-
-        $rows = SupplyRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as total")
+        $query = SupplyRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as total")
             ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->where('status', '!=', RequestStatus::Draft->value)
             ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('total', 'month');
+            ->orderBy('month');
 
-        $data = $months->map(fn($m) => (int) $rows->get($m, 0))->toArray();
+        if ($costCenterId) {
+            $query->where('cost_center_id', $costCenterId);
+        }
 
-        return [$this->monthLabels($months), $data];
+        $rows = $query->pluck('total', 'month');
+
+        return $months->map(fn($m) => (int) $rows->get($m, 0))->toArray();
     }
 }
