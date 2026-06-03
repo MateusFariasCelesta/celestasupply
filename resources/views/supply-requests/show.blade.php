@@ -16,6 +16,8 @@
     </div>
 </div>
 
+<x-status-timeline :supply-request="$supplyRequest" />
+
 <div class="row g-4">
     {{-- Details --}}
     <div class="col-md-3">
