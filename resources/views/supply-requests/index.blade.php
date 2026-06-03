@@ -36,12 +36,25 @@
         <div class="row g-2 align-items-end">
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Status</label>
-                <select id="f-status" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    @foreach(\App\Enums\RequestStatus::cases() as $s)
-                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                    @endforeach
-                </select>
+                <div class="dropdown">
+                    <button type="button" id="f-status-btn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
+                            style="border:1px solid #DEE2E6;background:#fff;font-size:.875rem;padding:.25rem .5rem;color:#212529;border-radius:.25rem">
+                        <span id="f-status-label">Todos</span>
+                        <i class="bi bi-chevron-down" style="font-size:10px;opacity:.5"></i>
+                    </button>
+                    <ul class="dropdown-menu w-100 py-1 shadow-sm" style="min-width:0;max-height:260px;overflow-y:auto">
+                        @foreach(\App\Enums\RequestStatus::cases() as $s)
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2 py-2" style="cursor:pointer;font-size:.875rem">
+                                <input type="checkbox" class="form-check-input flex-shrink-0 f-status-cb" value="{{ $s->value }}">
+                                {{ $s->label() }}
+                            </label>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Urgência</label>
@@ -94,28 +107,30 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Código</th>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Título</th>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Centro de Custo</th>
+                    @php $thStyle = 'font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none;white-space:nowrap'; @endphp
+                    <th data-sort-col="code" style="{{ $thStyle }}">Código <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th data-sort-col="title" style="{{ $thStyle }}">Título <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th data-sort-col="ccName" style="{{ $thStyle }}">Centro de Custo <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     @if(auth()->user()->isBuyerOrAdmin())
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Solicitante</th>
+                    <th data-sort-col="userName" style="{{ $thStyle }}">Solicitante <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     @endif
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Urgência</th>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Status</th>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Data</th>
+                    <th data-sort-col="urgencyOrder" style="{{ $thStyle }}">Urgência <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th data-sort-col="statusLabel" style="{{ $thStyle }}">Status <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th data-sort-col="date" style="{{ $thStyle }}">Data <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                 </tr>
             </thead>
             <tbody id="requests-tbody">
                 @forelse($supplyRequests as $sr)
                 @php
-                    $itemNames = $sr->items->map(fn($i) => $i->item?->name ?? '')->implode(' ');
-                    $searchData = strtolower(implode(' ', [
+                    $itemNames    = $sr->items->map(fn($i) => $i->item?->name ?? '')->implode(' ');
+                    $searchData   = strtolower(implode(' ', [
                         $sr->code ?? '',
                         $sr->title,
                         $sr->costCenter->name,
                         $sr->user->name,
                         $itemNames,
                     ]));
+                    $urgencyOrder = match($sr->urgency->value) { 'high' => 3, 'medium' => 2, default => 1 };
                 @endphp
                 <tr style="cursor:pointer"
                     onclick="window.location='{{ route('requests.show', $sr) }}'"
@@ -124,7 +139,13 @@
                     data-urgency="{{ $sr->urgency->value }}"
                     data-cc="{{ $sr->cost_center_id }}"
                     data-user="{{ $sr->user_id }}"
-                    data-date="{{ $sr->created_at->format('Y-m-d') }}">
+                    data-date="{{ $sr->created_at->format('Y-m-d') }}"
+                    data-code="{{ $sr->code ?? $sr->name }}"
+                    data-title="{{ $sr->title }}"
+                    data-cc-name="{{ $sr->costCenter->name }}"
+                    data-user-name="{{ $sr->user->name }}"
+                    data-urgency-order="{{ $urgencyOrder }}"
+                    data-status-label="{{ $sr->status->label() }}">
                     <td>
                         <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
                             {{ $sr->code ?? '—' }}
@@ -178,7 +199,6 @@
 
     const inputs = {
         q:       document.getElementById('f-q'),
-        status:  document.getElementById('f-status'),
         urgency: document.getElementById('f-urgency'),
         cc:      document.getElementById('f-cc'),
         user:    document.getElementById('f-user'),
@@ -186,23 +206,38 @@
         to:      document.getElementById('f-to'),
     };
 
-    function filter() {
-        const q       = inputs.q?.value.trim().toLowerCase() || '';
-        const terms   = q.split(/\s+/).filter(Boolean);
-        const status  = inputs.status?.value  || '';
-        const urgency = inputs.urgency?.value || '';
-        const cc      = inputs.cc?.value      || '';
-        const user    = inputs.user?.value    || '';
-        const from    = inputs.from?.value    || '';
-        const to      = inputs.to?.value      || '';
+    function getSelectedStatuses() {
+        return Array.from(document.querySelectorAll('.f-status-cb:checked')).map(cb => cb.value);
+    }
 
-        const hasFilter = q || status || urgency || cc || user || from || to;
+    function updateStatusLabel() {
+        const checked = document.querySelectorAll('.f-status-cb:checked');
+        const label   = document.getElementById('f-status-label');
+        if (!label) return;
+        label.textContent = checked.length === 0
+            ? 'Todos'
+            : checked.length === 1
+                ? checked[0].closest('label').textContent.trim()
+                : checked.length + ' selecionados';
+    }
+
+    function filter() {
+        const q           = inputs.q?.value.trim().toLowerCase() || '';
+        const terms       = q.split(/\s+/).filter(Boolean);
+        const selStatuses = getSelectedStatuses();
+        const urgency     = inputs.urgency?.value || '';
+        const cc          = inputs.cc?.value      || '';
+        const user        = inputs.user?.value    || '';
+        const from        = inputs.from?.value    || '';
+        const to          = inputs.to?.value      || '';
+
+        const hasFilter = q || selStatuses.length || urgency || cc || user || from || to;
         clearBtn.style.display = hasFilter ? '' : 'none';
 
         let visible = 0;
         rows.forEach(function (row) {
             const matchQ       = !terms.length || terms.every(t => row.dataset.search.includes(t));
-            const matchStatus  = !status  || row.dataset.status  === status;
+            const matchStatus  = !selStatuses.length || selStatuses.includes(row.dataset.status);
             const matchUrgency = !urgency || row.dataset.urgency === urgency;
             const matchCc      = !cc      || row.dataset.cc      === cc;
             const matchUser    = !user    || row.dataset.user    === user;
@@ -217,19 +252,65 @@
         noRes.style.display = (rows.length > 0 && visible === 0) ? 'block' : 'none';
     }
 
+    // Status: checkboxes no dropdown
+    document.querySelectorAll('.f-status-cb').forEach(function (cb) {
+        cb.addEventListener('change', function () { updateStatusLabel(); filter(); });
+    });
+
     // Busca: instantânea
     inputs.q?.addEventListener('input', filter);
 
     // Selects e datas: ao mudar
-    ['status', 'urgency', 'cc', 'user', 'from', 'to'].forEach(function (key) {
+    ['urgency', 'cc', 'user', 'from', 'to'].forEach(function (key) {
         inputs[key]?.addEventListener('change', filter);
     });
 
     // Limpar
     clearBtn?.addEventListener('click', function () {
         Object.values(inputs).forEach(el => { if (el) el.value = ''; });
+        document.querySelectorAll('.f-status-cb').forEach(cb => cb.checked = false);
+        updateStatusLabel();
         filter();
         inputs.q?.focus();
+    });
+
+    // Ordenação por coluna
+    let sortCol = null;
+    let sortDir = 'asc';
+
+    document.querySelectorAll('th[data-sort-col]').forEach(function (th) {
+        th.addEventListener('click', function () {
+            const col = th.dataset.sortCol;
+            sortDir   = (sortCol === col && sortDir === 'asc') ? 'desc' : 'asc';
+            sortCol   = col;
+
+            document.querySelectorAll('th[data-sort-col]').forEach(function (h) {
+                const icon = h.querySelector('.sort-icon');
+                if (!icon) return;
+                if (h.dataset.sortCol === sortCol) {
+                    icon.className = 'sort-icon bi bi-chevron-' + (sortDir === 'asc' ? 'up' : 'down') + ' ms-1';
+                    icon.style.opacity = '1';
+                    icon.style.color   = '#6366F1';
+                } else {
+                    icon.className     = 'sort-icon bi bi-chevron-expand ms-1';
+                    icon.style.opacity = '.3';
+                    icon.style.color   = '';
+                }
+            });
+
+            const numericCols = ['urgencyOrder'];
+            rows.sort(function (a, b) {
+                const aVal = a.dataset[col] || '';
+                const bVal = b.dataset[col] || '';
+                const cmp  = numericCols.includes(col)
+                    ? parseFloat(aVal || 0) - parseFloat(bVal || 0)
+                    : aVal.localeCompare(bVal, 'pt-BR', { numeric: true, sensitivity: 'base' });
+                return sortDir === 'asc' ? cmp : -cmp;
+            });
+
+            rows.forEach(function (row) { tbody.appendChild(row); });
+            filter();
+        });
     });
 })();
 </script>

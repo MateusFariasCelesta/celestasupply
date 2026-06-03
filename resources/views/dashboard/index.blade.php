@@ -18,7 +18,7 @@
     <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
-                <div class="cs-kpi-icon bg-warning bg-opacity-10 text-warning">
+                <div class="cs-kpi-icon bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-hourglass-split"></i>
                 </div>
                 <div>
@@ -45,7 +45,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
                 <div class="cs-kpi-icon bg-danger bg-opacity-10 text-danger">
-                    <i class="bi bi-lightning-fill"></i>
+                    <i class="bi bi-exclamation-lg"></i>
                 </div>
                 <div>
                     <div class="text-muted small fw-medium">Urgentes em Aberto</div>
@@ -61,12 +61,37 @@
     <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h6 class="fw-semibold mb-3">Visão Geral por Status</h6>
-                @php $statuses = \App\Enums\RequestStatus::cases(); @endphp
+                <h6 class="fw-semibold mb-1">Visão Geral por Status</h6>
+                @php
+                    $statuses = \App\Enums\RequestStatus::cases();
+                    $statusColors = [
+                        'draft'           => '#94A3B8',
+                        'pending'         => '#3B82F6',
+                        'inProgress'      => '#F59E0B',
+                        'completed'       => '#22C55E',
+                        'cancelRequested' => '#F43F5E',
+                        'cancelled'       => '#EF4444',
+                    ];
+                    $total = $byStatus->sum() ?: 1;
+                @endphp
+                <div class="text-muted small mb-3">{{ $byStatus->sum() }} no total</div>
                 @foreach($statuses as $status)
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge {{ $status->badgeClass() }}">{{ $status->label() }}</span>
-                    <span class="fw-semibold text-dark">{{ $byStatus->get($status->value, 0) }}</span>
+                @php
+                    $count = (int) $byStatus->get($status->value, 0);
+                    $pct   = round($count / $total * 100);
+                    $color = $statusColors[$status->value] ?? '#94A3B8';
+                @endphp
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:9px;height:9px;border-radius:50%;background:{{ $color }};flex-shrink:0;display:inline-block"></span>
+                            <span class="small text-dark">{{ $status->label() }}</span>
+                        </div>
+                        <span class="fw-semibold small">{{ $count }}</span>
+                    </div>
+                    <div style="height:4px;border-radius:2px;background:#F1F5F9">
+                        <div style="width:{{ $pct }}%;height:4px;border-radius:2px;background:{{ $color }};transition:width .4s ease"></div>
+                    </div>
                 </div>
                 @endforeach
             </div>
@@ -153,37 +178,42 @@ $statusCards = [
     @endforeach
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-        <h6 class="mb-0 fw-semibold">Minhas Últimas Solicitações</h6>
-        <a href="{{ route('requests.index') }}" class="btn btn-outline-primary btn-sm">
-            Ver Todas <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="mb-0 fw-semibold">Minhas Últimas Solicitações</h6>
+    <a href="{{ route('requests.index') }}" class="btn btn-outline-primary btn-sm">
+        Ver Todas <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>
+
+<div class="cs-card">
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Código</th>
-                    <th>Título</th>
-                    <th>Centro de Custo</th>
-                    <th>Status</th>
-                    <th>Data</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Código</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Título</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Centro de Custo</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Status</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Data</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($recent as $sr)
                 <tr style="cursor:pointer" onclick="window.location='{{ route('requests.show', $sr) }}'">
-                    <td class="fw-semibold">{{ $sr->name }}</td>
-                    <td>{{ $sr->title }}</td>
-                    <td>{{ $sr->costCenter?->name ?? '—' }}</td>
-                    <td><span class="badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
-                    <td class="text-muted small">{{ $sr->created_at->format('d/m/Y') }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
+                            {{ $sr->code ?? $sr->name }}
+                        </span>
+                    </td>
+                    <td style="font-size:14px;font-weight:500">{{ $sr->title }}</td>
+                    <td style="font-size:13px;color:#64748B">{{ $sr->costCenter?->name ?? '—' }}</td>
+                    <td><span class="cs-badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
+                    <td style="font-size:13px;color:#64748B">{{ $sr->created_at->format('d/m/Y') }}</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                    <td colspan="5" class="text-center py-5" style="color:#94A3B8">
+                        <i class="bi bi-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>
                         Nenhuma solicitação encontrada.
                     </td>
                 </tr>
