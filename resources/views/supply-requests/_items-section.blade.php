@@ -23,6 +23,7 @@
                     <th style="font-size:12px;color:#64748B;font-weight:600;width:110px">Quantidade</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600;width:120px">Unidade</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Observação</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600;width:130px">Anexo</th>
                     <th style="width:48px"></th>
                 </tr>
             </thead>

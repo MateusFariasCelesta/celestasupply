@@ -68,13 +68,18 @@ class SupplyRequestController extends Controller
             'status'         => RequestStatus::Draft,
         ]);
 
-        foreach ($data['items'] as $row) {
-            $sr->items()->create([
+        foreach ($data['items'] as $idx => $row) {
+            $item = $sr->items()->create([
                 'item_id'  => $this->resolveItemId($row['item_id']),
                 'quantity' => $row['quantity'],
                 'unit'     => $row['unit'] ?? null,
                 'notes'    => $row['notes'] ?? null,
             ]);
+
+            if ($file = $request->file("items.{$idx}.attachment")) {
+                $fileData = $this->fileUpload->store($file, "attachments/request-items/{$item->id}");
+                $item->attachment()->create([...$fileData, 'uploaded_by' => auth()->id()]);
+            }
         }
 
         $this->storeAttachments($request, $sr);
@@ -117,7 +122,7 @@ class SupplyRequestController extends Controller
         $costCenters = CostCenter::where('isActive', true)->orderBy('id')->get();
         $items       = Item::where('isActive', true)->orderBy('name')->get();
 
-        $supplyRequest->load('items.item', 'attachments');
+        $supplyRequest->load('items.item', 'items.attachment', 'attachments');
 
         return view('supply-requests.edit', compact('supplyRequest', 'costCenters', 'items'));
     }
@@ -135,14 +140,36 @@ class SupplyRequestController extends Controller
             'notes'          => $data['notes'] ?? null,
         ]);
 
+        // Preserve attachment data before cascade-delete removes the records
+        $existingAtts = $supplyRequest->items()
+            ->with('attachment')
+            ->get()
+            ->keyBy('id')
+            ->map(fn($i) => $i->attachment)
+            ->filter();
+
         $supplyRequest->items()->delete();
-        foreach ($data['items'] as $row) {
-            $supplyRequest->items()->create([
+
+        foreach ($data['items'] as $idx => $row) {
+            $item = $supplyRequest->items()->create([
                 'item_id'  => $this->resolveItemId($row['item_id']),
                 'quantity' => $row['quantity'],
                 'unit'     => $row['unit'] ?? null,
                 'notes'    => $row['notes'] ?? null,
             ]);
+
+            if ($file = $request->file("items.{$idx}.attachment")) {
+                $fileData = $this->fileUpload->store($file, "attachments/request-items/{$item->id}");
+                $item->attachment()->create([...$fileData, 'uploaded_by' => auth()->id()]);
+            } elseif (!empty($row['existing_item_id']) && $att = $existingAtts->get((int) $row['existing_item_id'])) {
+                $item->attachment()->create([
+                    'original_name' => $att->original_name,
+                    'path'          => $att->path,
+                    'mime_type'     => $att->mime_type,
+                    'size_kb'       => $att->size_kb,
+                    'uploaded_by'   => $att->uploaded_by,
+                ]);
+            }
         }
 
         $this->storeAttachments($request, $supplyRequest);

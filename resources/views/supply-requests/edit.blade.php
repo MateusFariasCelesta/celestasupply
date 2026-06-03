@@ -119,6 +119,8 @@
         'quantity'  => $i->quantity,
         'unit'      => $i->unit ?? '',
         'notes'     => $i->notes ?? '',
+        'existing_item_id'         => $i->id,
+        'existing_attachment_name' => $i->attachment?->original_name,
     ])->values();
 @endphp
 

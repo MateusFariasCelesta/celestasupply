@@ -14,6 +14,27 @@
             <span class="cs-badge {{ $supplyRequest->urgency->badgeClass() }}">{{ $supplyRequest->urgency->label() }}</span>
         </div>
     </div>
+    <div class="dropdown">
+        <button class="btn btn-sm fw-semibold dropdown-toggle" id="btn-pdf-main"
+                style="background:#DC2626;color:#fff;border:none;border-radius:6px"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <button type="button" class="dropdown-item btn-pdf-dl" style="font-size:13px"
+                        data-url="{{ route('requests.export.pdf', [$supplyRequest, 'filter' => 'all']) }}">
+                    <i class="bi bi-list-ul me-2"></i>Todos os itens
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item btn-pdf-dl" style="font-size:13px"
+                        data-url="{{ route('requests.export.pdf', [$supplyRequest, 'filter' => 'pending']) }}">
+                    <i class="bi bi-hourglass-split me-2"></i>Somente pendentes
+                </button>
+            </li>
+        </ul>
+    </div>
 </div>
 
 {{-- Bloco unificado: timeline + detalhes --}}
@@ -899,3 +920,36 @@ document.addEventListener('DOMContentLoaded', function () {
 @endif
 @endpush
 @endcan
+
+@push('scripts')
+<script>
+document.querySelectorAll('.btn-pdf-dl').forEach(function (item) {
+    item.addEventListener('click', function () {
+        var url = this.dataset.url;
+        var mainBtn = document.getElementById('btn-pdf-main');
+        var originalHtml = mainBtn.innerHTML;
+        mainBtn.disabled = true;
+        mainBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+        fetch(url)
+            .then(function (res) {
+                if (!res.ok) throw new Error('erro');
+                var disp = res.headers.get('content-disposition') || '';
+                var m = disp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                var filename = m ? m[1].replace(/['"]/g, '') : 'itens.pdf';
+                return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
+            })
+            .then(function (r) {
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(r.blob);
+                a.download = r.filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+            })
+            .catch(function () { alert('Erro ao gerar o PDF. Tente novamente.'); })
+            .finally(function () { mainBtn.disabled = false; mainBtn.innerHTML = originalHtml; });
+    });
+});
+</script>
+@endpush

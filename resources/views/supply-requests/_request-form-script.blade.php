@@ -9,6 +9,34 @@
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function buildAttCell(idx, data) {
+        const name = data.existing_attachment_name || '';
+        const id   = data.existing_item_id || '';
+        if (name) {
+            return `<td>
+                <div class="js-att-cur" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                    <i class="bi bi-paperclip" style="font-size:11px;color:#94A3B8;flex-shrink:0"></i>
+                    <span style="font-size:11px;color:#374151;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(name)}">${esc(name)}</span>
+                    <button type="button" class="js-att-swap" style="background:none;border:none;padding:0;cursor:pointer;font-size:11px;color:#3B82F6;white-space:nowrap">trocar</button>
+                </div>
+                <label class="js-att-pick btn btn-sm btn-outline-secondary" style="display:none;font-size:12px;cursor:pointer;padding:2px 8px;margin:0">
+                    <i class="bi bi-paperclip me-1"></i>Escolher
+                    <input type="file" name="items[${idx}][attachment]" class="js-att-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+                </label>
+                <span class="js-att-show" style="display:none;font-size:11px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px"></span>
+                <input type="hidden" name="items[${idx}][existing_item_id]" value="${esc(id)}">
+            </td>`;
+        }
+        return `<td>
+            <label class="btn btn-sm btn-outline-secondary" style="font-size:12px;cursor:pointer;padding:2px 8px;margin:0">
+                <i class="bi bi-paperclip me-1"></i>Anexar
+                <input type="file" name="items[${idx}][attachment]" class="js-att-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+            </label>
+            <span class="js-att-show" style="font-size:11px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:110px"></span>
+            <input type="hidden" name="items[${idx}][existing_item_id]" value="">
+        </td>`;
+    }
+
     function buildRow(idx, data = {}) {
         const hasItem   = !!(data.item_id);
         const labelText = data.item_name || 'Selecionar item...';
@@ -64,12 +92,14 @@
             <td><input type="text" name="items[${idx}][notes]"
                        class="form-control form-control-sm" placeholder="Opcional"
                        value="${esc(data.notes || '')}"></td>
+            ${buildAttCell(idx, data)}
             <td><button type="button" class="btn btn-sm btn-outline-danger js-rm" title="Remover">
                     <i class="bi bi-trash"></i>
                 </button></td>
         `;
 
         wirePicker(tr);
+        wireAttachment(tr);
 
         tr.querySelector('.js-rm').addEventListener('click', function () {
             if (document.querySelectorAll('#items-tbody tr').length > 1) {
@@ -79,6 +109,25 @@
         });
 
         return tr;
+    }
+
+    function wireAttachment(tr) {
+        const attInput = tr.querySelector('.js-att-input');
+        if (!attInput) return;
+        attInput.addEventListener('change', function () {
+            const show = tr.querySelector('.js-att-show');
+            if (show) {
+                show.textContent = this.files[0] ? this.files[0].name : '';
+                show.style.display = this.files[0] ? 'block' : 'none';
+            }
+        });
+        const swapBtn = tr.querySelector('.js-att-swap');
+        if (swapBtn) {
+            swapBtn.addEventListener('click', function () {
+                tr.querySelector('.js-att-cur').style.display = 'none';
+                tr.querySelector('.js-att-pick').style.display = '';
+            });
+        }
     }
 
     function addRow(data = {}) {

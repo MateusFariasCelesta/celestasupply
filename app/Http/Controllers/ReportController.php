@@ -39,6 +39,30 @@ class ReportController extends Controller
         );
     }
 
+    public function exportRequestPdf(Request $request, SupplyRequest $supplyRequest)
+    {
+        abort_if(!auth()->user()->can('view', $supplyRequest), 403);
+
+        $supplyRequest->load(['costCenter', 'user', 'items.item']);
+
+        $filter = $request->get('filter', 'all');
+        $items  = $supplyRequest->items;
+
+        if ($filter === 'pending') {
+            $items = $items->filter(fn($i) =>
+                in_array($i->status->value, ['pending', 'quoting', 'cancelRequested'])
+            );
+        }
+
+        $logoBase64 = base64_encode(file_get_contents(public_path('images/celesta-mineracao-logo.png')));
+        $logoSrc    = 'data:image/png;base64,' . $logoBase64;
+
+        $pdf = Pdf::loadView('reports.request-pdf', compact('supplyRequest', 'items', 'logoSrc', 'filter'))
+                  ->setPaper('a4', 'portrait');
+
+        return $pdf->download($supplyRequest->code . '-itens-' . now()->format('Y-m-d') . '.pdf');
+    }
+
     public function exportPdf(Request $request)
     {
         $this->authorizeAccess();

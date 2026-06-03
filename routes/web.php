@@ -73,6 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
 
+    // Single-request PDF export
+    Route::get('requests/{supplyRequest}/export/pdf', [ReportController::class, 'exportRequestPdf'])->name('requests.export.pdf');
+
     // Suppliers (buyer + admin)
     Route::resource('suppliers', SupplierController::class)->except(['show', 'destroy']);
 

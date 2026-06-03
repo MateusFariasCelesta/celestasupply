@@ -359,8 +359,31 @@
     document.getElementById('btn-export-excel')?.addEventListener('click', function () {
         window.open(buildExportUrl(excelBase), '_blank');
     });
+
     document.getElementById('btn-export-pdf')?.addEventListener('click', function () {
-        window.open(buildExportUrl(pdfBase), '_blank');
+        const btn = this;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Gerando…';
+
+        fetch(buildExportUrl(pdfBase))
+            .then(function (res) {
+                if (!res.ok) throw new Error('erro');
+                var disp = res.headers.get('content-disposition') || '';
+                var m = disp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                var filename = m ? m[1].replace(/['"]/g, '') : 'relatorio.pdf';
+                return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
+            })
+            .then(function (r) {
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(r.blob);
+                a.download = r.filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+            })
+            .catch(function () { alert('Erro ao gerar o PDF. Tente novamente.'); })
+            .finally(function () { btn.disabled = false; btn.innerHTML = originalHtml; });
     });
 })();
 </script>
