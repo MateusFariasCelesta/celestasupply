@@ -92,6 +92,7 @@ class SupplyRequestController extends Controller
             'items.item',
             'items.supplier',
             'items.attachment.uploadedBy',
+            'items.deliveries.registeredBy',
             'attachments.uploadedBy',
             'externalOrders.registeredBy',
             'statusHistory.changedBy',

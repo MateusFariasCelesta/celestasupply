@@ -191,34 +191,34 @@
 
 ---
 
-## ÉPICO 14 — Relatórios (Admin e Comprador)
+## ÉPICO 14 — Relatórios (Admin e Comprador) ✅
 
-- [ ] Policy: `ReportPolicy` (admin e buyer)
-- [ ] Controller: `ReportController`
-- [ ] Blade: `reports/index` — filtros: período, status, centro de custo, solicitante
-- [ ] Instalar `maatwebsite/excel` (Laravel Excel) e `barryvdh/laravel-dompdf`
-- [ ] Exportação Excel: código, título, centro de custo, solicitante, urgência, status, data, qtd de itens
-- [ ] Exportação PDF: mesmo layout em formato imprimível
-- [ ] Rota: `GET /reports/export/excel`
-- [ ] Rota: `GET /reports/export/pdf`
+- [x] Botões Excel e PDF diretamente na página de solicitações (sem página separada)
+- [x] Export respeita filtros ativos: busca, status, urgência, centro de custo, solicitante, período
+- [x] Rascunhos excluídos de todos os exports
+- [x] Excel: logo, separador azul, título dinâmico, barra de filtros, resumo mesclado, tabela com AutoFilter e zebra
+- [x] PDF: logo, título dinâmico, barra de filtros, resumo com colunas equidistantes, tabela, rodapé
+- [x] Título adaptado ao filtro (ex.: "Relatório de Solicitações Concluídas — 01/05/2026 a 31/05/2026")
+- [x] Instalar `maatwebsite/excel` + `barryvdh/laravel-dompdf`
+- [x] Rotas: `GET /reports/export/excel` e `GET /reports/export/pdf`
 
 ---
 
-## ÉPICO 15 — Página de Detalhe (`/requests/{id}`)
+## ÉPICO 15 — Página de Detalhe (`/requests/{id}`) ✅
 
-> Agrega componentes de vários épicos. Partes já existem — este épico consolida e completa.
+> Agrega componentes de vários épicos.
 
 - [x] Cabeçalho: código SC-NNNN, título, centro de custo, solicitante, data, urgência, status
 - [x] Componente `<x-status-timeline>` (Épico 11)
 - [x] Seção "Pedidos" — lista com número (formato 0001), notas e botões ver/download (Épico 10)
 - [x] Seção "Anexos da Solicitação" — tipo (badge), tamanho, ver/download (Épico 10)
-- [ ] Tabela de itens: status individual, fornecedor, quantidade pedida, quantidade entregue, saldo, anexo
-- [ ] Histórico de entregas por item (expansível inline)
-- [ ] Ações do solicitante: botão "Solicitar Cancelamento" com modal + motivo obrigatório
-- [ ] Ações do solicitante: botão "Confirmar Recebimento" visível apenas quando `status = inProgress` (após todas as entregas)
-- [ ] Ações do comprador: avançar status da solicitação
-- [ ] Ações do comprador: aprovar / recusar cancelamento
-- [ ] Ações do comprador: registrar entrega por item (quantidade parcial ou total)
-- [ ] Ações do comprador: vincular fornecedor ao item
-- [ ] Ações do comprador: cancelar item individualmente (com motivo)
-- [ ] Toast de feedback após cada ação (sucesso / erro) — Alpine.js + Bootstrap Toast
+- [x] Tabela de itens: status individual, fornecedor, quantidade pedida, quantidade entregue, restante, anexo
+- [x] Histórico de entregas por item (expansível inline — ícone relógio no nome do item)
+- [x] Ações do solicitante: botão "Solicitar Cancelamento" com modal + motivo obrigatório
+- [x] Ações do solicitante: botão "Confirmar Recebimento" visível quando `status = inProgress` e todos os itens resolvidos
+- [x] Ações do comprador: avançar status da solicitação ("Iniciar Atendimento" / "Confirmar Conclusão")
+- [x] Ações do comprador: aprovar / recusar cancelamento
+- [x] Ações do comprador: registrar entrega por item (modal com quantidade + observações, auto-avança para Recebido ao completar)
+- [x] Ações do comprador: vincular fornecedor ao item
+- [x] Ações do comprador: cancelar item individualmente (com motivo)
+- [x] Toast de feedback após cada ação (sistema já implementado no layout)

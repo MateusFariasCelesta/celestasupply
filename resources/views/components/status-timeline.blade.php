@@ -1,4 +1,4 @@
-@props(['supplyRequest'])
+@props(['supplyRequest', 'standalone' => true])
 
 @php
 use App\Enums\RequestStatus;
@@ -52,10 +52,12 @@ $stepConfig = [
 ];
 @endphp
 
-<div class="cs-card mb-4">
+@if($standalone)<div class="cs-card mb-4">@endif
+    @if($standalone)
     <h6 class="fw-semibold mb-4" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">
         Linha do Tempo
     </h6>
+    @endif
 
     {{-- Step bar --}}
     <div class="position-relative" style="padding:0 0 4px">
@@ -140,27 +142,36 @@ $stepConfig = [
     </div>
     @endif
 
-    {{-- History log --}}
+    {{-- History log (collapsible) --}}
     @if($history->count() > 0)
-    <div style="border-top:1px solid #F1F5F9;margin-top:16px;padding-top:12px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;font-weight:600;margin-bottom:8px">
-            Histórico
-        </div>
-        <div class="d-flex flex-column gap-2">
-            @foreach($history as $entry)
-            <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:12px">
-                <span style="color:#94A3B8;min-width:72px;font-variant-numeric:tabular-nums">
-                    {{ $entry->created_at->format('d/m H:i') }}
-                </span>
-                <span style="color:#475569;font-weight:500">{{ $entry->changedBy->name }}</span>
-                @if($entry->from_status)
-                <span class="cs-badge {{ $entry->from_status->badgeClass() }}">{{ $entry->from_status->label() }}</span>
-                <i class="bi bi-arrow-right" style="color:#CBD5E1"></i>
-                @endif
-                <span class="cs-badge {{ $entry->to_status->badgeClass() }}">{{ $entry->to_status->label() }}</span>
+    <div style="border-top:1px solid #F1F5F9;margin-top:16px;padding-top:10px">
+        <button class="btn btn-link p-0 d-flex align-items-center gap-1 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#statusHistoryLog"
+                aria-expanded="false"
+                style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;font-weight:600;text-decoration:none">
+            <i class="bi bi-clock-history me-1"></i>
+            Histórico ({{ $history->count() }})
+            <i class="bi bi-chevron-down ms-1" style="font-size:10px;transition:transform .2s"></i>
+        </button>
+        <div class="collapse" id="statusHistoryLog">
+            <div class="d-flex flex-column gap-2 pt-3">
+                @foreach($history as $entry)
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:12px">
+                    <span style="color:#94A3B8;min-width:72px;font-variant-numeric:tabular-nums">
+                        {{ $entry->created_at->format('d/m H:i') }}
+                    </span>
+                    <span style="color:#475569;font-weight:500">{{ $entry->changedBy->name }}</span>
+                    @if($entry->from_status)
+                    <span class="cs-badge {{ $entry->from_status->badgeClass() }}">{{ $entry->from_status->label() }}</span>
+                    <i class="bi bi-arrow-right" style="color:#CBD5E1"></i>
+                    @endif
+                    <span class="cs-badge {{ $entry->to_status->badgeClass() }}">{{ $entry->to_status->label() }}</span>
+                </div>
+                @endforeach
             </div>
-            @endforeach
         </div>
     </div>
     @endif
-</div>
+@if($standalone)</div>@endif

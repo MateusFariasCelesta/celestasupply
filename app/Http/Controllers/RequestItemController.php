@@ -81,6 +81,37 @@ class RequestItemController extends Controller
         }
     }
 
+    public function registerDelivery(Request $request, SupplyRequest $supplyRequest, SupplyRequestItem $supplyRequestItem): RedirectResponse
+    {
+        $this->authorize('registerDelivery', $supplyRequestItem);
+        abort_if($supplyRequestItem->supply_request_id !== $supplyRequest->id, 404);
+
+        $remaining = (float) $supplyRequestItem->quantity - (float) $supplyRequestItem->delivered_quantity;
+
+        $data = $request->validate([
+            'quantity' => ['required', 'numeric', 'min:0.001', 'max:' . $remaining],
+            'notes'    => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $supplyRequestItem->deliveries()->create([
+            'quantity'      => $data['quantity'],
+            'notes'         => $data['notes'] ?? null,
+            'registered_by' => auth()->id(),
+        ]);
+
+        $newDelivered = (float) $supplyRequestItem->delivered_quantity + (float) $data['quantity'];
+        $updates = ['delivered_quantity' => $newDelivered];
+
+        if ($newDelivered >= (float) $supplyRequestItem->quantity) {
+            $updates['status'] = ItemStatus::Received;
+        }
+
+        $supplyRequestItem->update($updates);
+        $this->autoAdvanceRequest($supplyRequest);
+
+        return back()->with('success', 'Entrega registrada com sucesso.');
+    }
+
     public function requestCancellation(Request $request, SupplyRequest $supplyRequest, SupplyRequestItem $supplyRequestItem): RedirectResponse
     {
         $this->authorize('requestCancellation', $supplyRequestItem);

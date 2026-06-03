@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\ItemStatus;
 use App\Enums\RequestStatus;
+use App\Models\SupplyRequest;
 use App\Models\SupplyRequestItem;
 use App\Models\User;
 
@@ -72,6 +73,13 @@ class RequestItemPolicy
     public function refuseCancellation(User $user, SupplyRequestItem $item): bool
     {
         return $user->isBuyerOrAdmin() && $item->status === ItemStatus::CancelRequested;
+    }
+
+    public function registerDelivery(User $user, SupplyRequestItem $item): bool
+    {
+        return $user->isBuyerOrAdmin()
+            && $item->status === ItemStatus::AwaitingDelivery
+            && $item->supplyRequest->status === RequestStatus::InProgress;
     }
 
     public function jumpStatus(User $user, SupplyRequestItem $_item): bool

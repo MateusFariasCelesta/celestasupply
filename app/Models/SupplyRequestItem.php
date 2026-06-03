@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ItemStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SupplyRequestItem extends Model
@@ -48,5 +49,10 @@ class SupplyRequestItem extends Model
     public function attachment(): HasOne
     {
         return $this->hasOne(ItemAttachment::class);
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(ItemDelivery::class)->orderBy('created_at');
     }
 }

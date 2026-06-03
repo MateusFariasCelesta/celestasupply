@@ -16,239 +16,426 @@
     </div>
 </div>
 
-<x-status-timeline :supply-request="$supplyRequest" />
-
-<div class="row g-4">
-    {{-- Details --}}
-    <div class="col-md-3">
-        <div class="cs-card h-100">
-            <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Detalhes</h6>
-            <dl class="mb-0" style="font-size:14px">
-                <dt class="text-muted fw-normal" style="font-size:12px">Centro de Custo</dt>
-                <dd class="mb-3">{{ $supplyRequest->costCenter->name }}</dd>
-
-                <dt class="text-muted fw-normal" style="font-size:12px">Solicitante</dt>
-                <dd class="mb-3">{{ $supplyRequest->user->name }}</dd>
-
-                <dt class="text-muted fw-normal" style="font-size:12px">Data</dt>
-                <dd class="mb-3">{{ $supplyRequest->created_at->format('d/m/Y H:i') }}</dd>
-
-                @if($supplyRequest->notes)
-                <dt class="text-muted fw-normal" style="font-size:12px">Observações</dt>
-                <dd class="mb-3">{{ $supplyRequest->notes }}</dd>
-                @endif
-
-                @if($supplyRequest->cancellation_reason)
-                <dt class="text-muted fw-normal" style="font-size:12px">Motivo do Cancelamento</dt>
-                <dd class="mb-0">
-                    <span class="text-danger">{{ $supplyRequest->cancellation_reason }}</span>
-                </dd>
-                @endif
-            </dl>
+{{-- Bloco unificado: timeline + detalhes --}}
+<div class="cs-card mb-4">
+    <div class="row g-0 align-items-start">
+        <div class="col">
+            <p class="mb-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748B;font-weight:600;margin-bottom:0">Linha do Tempo</p>
+            <x-status-timeline :supply-request="$supplyRequest" :standalone="false" />
         </div>
     </div>
-
-    {{-- Items --}}
-    <div class="col-md-9">
-        <div class="cs-card">
-            <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Item</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Qtd.</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Unidade</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Fornecedor</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Nº PC</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Obs.</th>
-                            <th style="font-size:12px;color:#64748B;font-weight:600">Anexo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($supplyRequest->items as $item)
-                        <tr @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
-                            <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
-                            <td style="font-size:14px">{{ $item->quantity }}</td>
-                            <td style="font-size:13px;color:#64748B">{{ $item->unit ?? '—' }}</td>
-                            <td style="font-size:13px;min-width:160px">
-                                @can('setSupplier', $item)
-                                <form method="POST" action="{{ route('requests.items.supplier', [$supplyRequest, $item]) }}"
-                                      class="d-flex align-items-center gap-1">
-                                    @csrf @method('PATCH')
-                                    <select name="supplier_id" class="form-select form-select-sm"
-                                            onchange="this.form.submit()"
-                                            style="font-size:12px;min-width:120px">
-                                        <option value="">— Nenhum —</option>
-                                        @foreach($suppliers as $s)
-                                        <option value="{{ $s->id }}" @selected($item->supplier_id == $s->id)>
-                                            {{ $s->name }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </form>
-                                @else
-                                <span style="color:#64748B">{{ $item->supplier?->name ?? '—' }}</span>
-                                @endcan
-                            </td>
-                            <td style="min-width:200px">
-                                <span class="cs-badge {{ $item->status->badgeClass() }}">
-                                    {{ $item->status->label() }}
-                                </span>
-                                @if($item->cancel_reason)
-                                <div style="font-size:11px;color:#94A3B8;margin-top:3px">{{ $item->cancel_reason }}</div>
-                                @endif
-
-                                @can('jumpStatus', $item)
-                                <form method="POST" action="{{ route('requests.items.jumpStatus', [$supplyRequest, $item]) }}" class="mt-2">
-                                    @csrf @method('PATCH')
-                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()"
-                                            style="font-size:12px;border-color:#FDE047;color:#92400E;background:#FFFBEB">
-                                        <option value="" disabled selected>⚡ Forçar para…</option>
-                                        @foreach(\App\Enums\ItemStatus::cases() as $s)
-                                            @if($s !== $item->status)
-                                            <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
-                                </form>
-                                @endcan
-
-                                @if(auth()->user()->isBuyerOrAdmin() || $supplyRequest->user_id === auth()->id())
-                                <div class="d-flex gap-1 flex-wrap mt-2">
-                                    @if(auth()->user()->isBuyerOrAdmin())
-                                        @can('updateStatus', $item)
-                                        @if($item->status === \App\Enums\ItemStatus::Quoting)
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-secondary"
-                                                style="font-size:11px;padding:2px 8px"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#orderNumberModal"
-                                                data-action="{{ route('requests.items.status', [$supplyRequest, $item]) }}"
-                                                data-item-name="{{ $item->item->name }}">
-                                            <i class="bi bi-arrow-right"></i> {{ $item->status->nextStatus()->label() }}
-                                        </button>
-                                        @else
-                                        <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                                    title="Avançar para {{ $item->status->nextStatus()->label() }}"
-                                                    style="font-size:11px;padding:2px 8px">
-                                                <i class="bi bi-arrow-right"></i> {{ $item->status->nextStatus()->label() }}
-                                            </button>
-                                        </form>
-                                        @endif
-                                        @endcan
-
-                                        @can('approveCancellation', $item)
-                                        <form method="POST" action="{{ route('requests.items.approveCancellation', [$supplyRequest, $item]) }}" class="d-inline"
-                                              onsubmit="return confirm('Aprovar o cancelamento deste item?')">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-danger"
-                                                    style="font-size:11px;padding:2px 8px">
-                                                <i class="bi bi-check"></i> Aprovar
-                                            </button>
-                                        </form>
-                                        @endcan
-
-                                        @can('refuseCancellation', $item)
-                                        <form method="POST" action="{{ route('requests.items.refuseCancellation', [$supplyRequest, $item]) }}" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                                    style="font-size:11px;padding:2px 8px">
-                                                <i class="bi bi-arrow-counterclockwise"></i> Recusar
-                                            </button>
-                                        </form>
-                                        @endcan
-
-                                        @can('cancel', $item)
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                style="font-size:11px;padding:2px 7px"
-                                                title="Cancelar item"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#cancelItemModal"
-                                                data-item-id="{{ $item->id }}"
-                                                data-item-name="{{ $item->item->name }}"
-                                                data-action="{{ route('requests.items.cancel', [$supplyRequest, $item]) }}">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                        @endcan
-                                    @endif
-
-                                    @can('requestCancellation', $item)
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger"
-                                            style="font-size:11px;padding:2px 8px"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#requestCancelItemModal"
-                                            data-action="{{ route('requests.items.requestCancellation', [$supplyRequest, $item]) }}"
-                                            data-item-name="{{ $item->item->name }}">
-                                        <i class="bi bi-x-circle"></i> Cancelar
-                                    </button>
-                                    @endcan
-                                </div>
-                                @endif
-                            </td>
-                            <td style="font-size:13px">
-                                @if($item->order_number)
-                                <span style="font-family:monospace;font-weight:600;color:#0369A1">
-                                    PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
-                                </span>
-                                @else
-                                <span style="color:#CBD5E1">—</span>
-                                @endif
-                            </td>
-                            <td style="font-size:13px;color:#64748B">{{ $item->notes ?? '—' }}</td>
-                            <td style="min-width:130px">
-                                @if($item->attachment)
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <a href="{{ route('requests.items.attachment.view', [$supplyRequest, $item]) }}"
-                                       target="_blank"
-                                       class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 8px"
-                                       title="{{ $item->attachment->original_name }}">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </a>
-                                    <a href="{{ route('requests.items.attachment.download', [$supplyRequest, $item]) }}"
-                                       class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 8px"
-                                       title="{{ $item->attachment->original_name }}">
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                    @can('delete', $item->attachment)
-                                    <form method="POST" action="{{ route('requests.items.attachment.destroy', [$supplyRequest, $item]) }}"
-                                          onsubmit="return confirm('Remover este arquivo?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                style="font-size:11px;padding:2px 5px">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endcan
-                                </div>
-                                @else
-                                @can('create', [\App\Models\ItemAttachment::class, $item])
-                                <form method="POST" action="{{ route('requests.items.attachment.store', [$supplyRequest, $item]) }}"
-                                      enctype="multipart/form-data">
-                                    @csrf
-                                    <label class="btn btn-sm btn-outline-secondary"
-                                           style="font-size:11px;padding:2px 8px;cursor:pointer;margin:0">
-                                        <i class="bi bi-paperclip"></i> Anexar
-                                        <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"
-                                               style="display:none" onchange="this.form.submit()">
-                                    </label>
-                                </form>
-                                @endcan
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <div class="d-flex flex-wrap gap-4 pt-3 mt-3" style="border-top:1px solid #F1F5F9;font-size:13px">
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Centro de Custo</div>
+            <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->costCenter->name }}</div>
         </div>
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Solicitante</div>
+            <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->user->name }}</div>
+        </div>
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Data</div>
+            <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->created_at->format('d/m/Y H:i') }}</div>
+        </div>
+        @if($supplyRequest->notes)
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Observações</div>
+            <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->notes }}</div>
+        </div>
+        @endif
+        @if($supplyRequest->cancellation_reason)
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Motivo do Cancelamento</div>
+            <div style="font-weight:500;color:#DC2626">{{ $supplyRequest->cancellation_reason }}</div>
+        </div>
+        @endif
     </div>
 </div>
+
+{{-- Items --}}
+<div class="cs-card mb-4">
+    <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">Item</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">Qtd.</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">Nº PC</th>
+                    <th style="width:36px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($supplyRequest->items as $item)
+                <tr @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
+                    <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="cs-badge {{ $item->status->badgeClass() }}">{{ $item->status->label() }}</span>
+                            @can('updateStatus', $item)
+                            @if($item->status === \App\Enums\ItemStatus::Quoting)
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    style="font-size:11px;padding:2px 8px"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#orderNumberModal"
+                                    data-action="{{ route('requests.items.status', [$supplyRequest, $item]) }}"
+                                    data-item-name="{{ $item->item->name }}">
+                                <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
+                            </button>
+                            @else
+                            <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
+                                @csrf @method('PATCH')
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        style="font-size:11px;padding:2px 8px">
+                                    <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
+                                </button>
+                            </form>
+                            @endif
+                            @endcan
+                        </div>
+                        @if($item->cancel_reason)
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px">{{ $item->cancel_reason }}</div>
+                        @endif
+                    </td>
+                    <td style="font-size:13px;color:#374151">
+                        {{ rtrim(rtrim(number_format((float)$item->quantity, 3, ',', ''), '0'), ',') }}
+                        @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
+                    </td>
+                    <td style="font-size:13px">
+                        @if($item->order_number)
+                        <span style="font-family:monospace;font-weight:600;color:#0369A1">
+                            PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
+                        </span>
+                        @else
+                        <span style="color:#CBD5E1">—</span>
+                        @endif
+                    </td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                style="padding:3px 8px;font-size:12px"
+                                data-bs-toggle="offcanvas"
+                                data-bs-target="#item-panel-{{ $item->id }}"
+                                title="Ver detalhes">
+                            <i class="bi bi-sliders2"></i>
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@push('modals')
+{{-- Item offcanvases — fora do .cs-content para evitar stacking-context do transform da animação --}}
+@foreach($supplyRequest->items as $item)
+@php
+    $delivered = (float) $item->delivered_quantity;
+    $remaining = (float) $item->quantity - $delivered;
+    $fmtQ = fn($n) => rtrim(rtrim(number_format((float)$n, 3, ',', ''), '0'), ',');
+@endphp
+<div class="offcanvas offcanvas-end" tabindex="-1"
+     id="item-panel-{{ $item->id }}"
+     data-bs-backdrop="false"
+     data-bs-scroll="true"
+     style="width:420px;max-width:100vw;top:60px;box-shadow:-4px 0 24px rgba(0,0,0,.1)"
+     aria-labelledby="item-panel-label-{{ $item->id }}">
+
+    <div class="offcanvas-header" style="border-bottom:1px solid #F1F5F9">
+        <div>
+            <h6 class="offcanvas-title mb-1" id="item-panel-label-{{ $item->id }}"
+                style="font-size:15px;font-weight:700;color:#1E293B">
+                {{ $item->item->name }}
+            </h6>
+            <span class="cs-badge {{ $item->status->badgeClass() }}">{{ $item->status->label() }}</span>
+            @if($item->order_number)
+            <span class="ms-1" style="font-family:monospace;font-size:11px;color:#0369A1;font-weight:600">
+                PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
+            </span>
+            @endif
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+
+    <div class="offcanvas-body" style="font-size:13px">
+
+        @if($item->cancel_reason)
+        <div class="mb-3 px-3 py-2 rounded-2"
+             style="background:#FEF2F2;border-left:3px solid #EF4444;font-size:12px;color:#7F1D1D">
+            {{ $item->cancel_reason }}
+        </div>
+        @endif
+
+        {{-- Quantidades --}}
+        <div class="row g-2 mb-4">
+            <div class="col-4">
+                <div class="p-2 rounded-2 text-center" style="background:#F8FAFC">
+                    <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Pedida</div>
+                    <div style="font-size:17px;font-weight:700;color:#1E293B;line-height:1.3">{{ $fmtQ($item->quantity) }}</div>
+                    @if($item->unit)<div style="font-size:11px;color:#94A3B8">{{ $item->unit }}</div>@endif
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 rounded-2 text-center" style="background:{{ $delivered > 0 ? '#F0FDF4' : '#F8FAFC' }}">
+                    <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Entregue</div>
+                    <div style="font-size:17px;font-weight:700;line-height:1.3;color:{{ $delivered > 0 ? '#166534' : '#CBD5E1' }}">
+                        {{ $delivered > 0 ? $fmtQ($delivered) : '—' }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 rounded-2 text-center"
+                     style="background:{{ $remaining > 0 && $item->status->value !== 'cancelled' ? '#FFFBEB' : '#F8FAFC' }}">
+                    <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Restante</div>
+                    <div style="font-size:17px;font-weight:700;line-height:1.3;color:{{ $remaining > 0 && $item->status->value !== 'cancelled' ? '#92400E' : '#CBD5E1' }}">
+                        {{ $item->status->value !== 'cancelled' ? $fmtQ($remaining) : '—' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Fornecedor --}}
+        <div class="mb-3">
+            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Fornecedor</div>
+            @can('setSupplier', $item)
+            <form method="POST" action="{{ route('requests.items.supplier', [$supplyRequest, $item]) }}">
+                @csrf @method('PATCH')
+                <select name="supplier_id" class="form-select form-select-sm" onchange="this.form.submit()" style="font-size:12px">
+                    <option value="">— Nenhum —</option>
+                    @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}" @selected($item->supplier_id == $s->id)>{{ $s->name }}</option>
+                    @endforeach
+                </select>
+            </form>
+            @else
+            <span style="color:#374151">{{ $item->supplier?->name ?? '—' }}</span>
+            @endcan
+        </div>
+
+        @if($item->notes)
+        <div class="mb-3">
+            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Observações</div>
+            <p style="margin:0;color:#374151">{{ $item->notes }}</p>
+        </div>
+        @endif
+
+        {{-- Anexo --}}
+        <div class="mb-4">
+            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Anexo</div>
+            @if($item->attachment)
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span style="font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    {{ $item->attachment->original_name }}
+                </span>
+                <a href="{{ route('requests.items.attachment.view', [$supplyRequest, $item]) }}" target="_blank"
+                   class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 8px">
+                    <i class="bi bi-eye"></i> Ver
+                </a>
+                <a href="{{ route('requests.items.attachment.download', [$supplyRequest, $item]) }}"
+                   class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 8px">
+                    <i class="bi bi-download"></i>
+                </a>
+                @can('delete', $item->attachment)
+                <form method="POST" action="{{ route('requests.items.attachment.destroy', [$supplyRequest, $item]) }}"
+                      onsubmit="return confirm('Remover este arquivo?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:11px;padding:2px 6px">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+                @endcan
+            </div>
+            @else
+            @can('create', [\App\Models\ItemAttachment::class, $item])
+            <form method="POST" action="{{ route('requests.items.attachment.store', [$supplyRequest, $item]) }}"
+                  enctype="multipart/form-data">
+                @csrf
+                <label class="btn btn-sm btn-outline-secondary" style="font-size:12px;cursor:pointer;margin:0">
+                    <i class="bi bi-paperclip me-1"></i>Anexar arquivo
+                    <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="this.form.submit()">
+                </label>
+            </form>
+            @else
+            <span style="color:#CBD5E1">—</span>
+            @endcan
+            @endif
+        </div>
+
+        {{-- Ações --}}
+        <div style="border-top:1px solid #F1F5F9;padding-top:14px;margin-bottom:16px">
+            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Ações</div>
+            <div class="d-flex flex-column gap-2">
+
+                @can('updateStatus', $item)
+                @if($item->status === \App\Enums\ItemStatus::Quoting)
+                <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
+                    @csrf @method('PATCH')
+                    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px">
+                        <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">
+                            <i class="bi bi-arrow-right me-1"></i>Avançar para {{ $item->status->nextStatus()->label() }}
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1;font-size:12px">PC-</span>
+                            <input type="number" name="order_number" class="form-control"
+                                   min="1" max="9999" required placeholder="0001" style="font-family:monospace">
+                            <button type="submit" class="btn btn-outline-secondary" style="font-size:12px">Confirmar</button>
+                        </div>
+                    </div>
+                </form>
+                @else
+                <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
+                            style="font-size:12px;text-align:left;padding:7px 12px">
+                        <i class="bi bi-arrow-right me-2"></i>Avançar para {{ $item->status->nextStatus()->label() }}
+                    </button>
+                </form>
+                @endif
+                @endcan
+
+                @can('registerDelivery', $item)
+                <form method="POST" action="{{ route('requests.items.deliver', [$supplyRequest, $item]) }}">
+                    @csrf
+                    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px">
+                        <div style="font-size:12px;font-weight:600;color:#1D4ED8;margin-bottom:8px">
+                            <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrega
+                            <span style="font-weight:400;color:#6B7280">(restante: {{ $fmtQ($remaining) }}{{ $item->unit ? ' '.$item->unit : '' }})</span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-7">
+                                <input type="number" name="quantity" class="form-control form-control-sm"
+                                       step="0.001" min="0.001" max="{{ $remaining }}" required
+                                       placeholder="Quantidade">
+                            </div>
+                            <div class="col-5">
+                                <input type="text" name="notes" class="form-control form-control-sm"
+                                       maxlength="500" placeholder="Obs. (opcional)">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-sm w-100" style="font-size:12px">
+                                    <i class="bi bi-check me-1"></i>Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                @endcan
+
+                @can('approveCancellation', $item)
+                <form method="POST" action="{{ route('requests.items.approveCancellation', [$supplyRequest, $item]) }}"
+                      onsubmit="return confirm('Aprovar o cancelamento deste item?')">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-danger w-100"
+                            style="font-size:12px;text-align:left;padding:7px 12px">
+                        <i class="bi bi-check me-2"></i>Aprovar Cancelamento
+                    </button>
+                </form>
+                @endcan
+
+                @can('refuseCancellation', $item)
+                <form method="POST" action="{{ route('requests.items.refuseCancellation', [$supplyRequest, $item]) }}">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
+                            style="font-size:12px;text-align:left;padding:7px 12px">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Recusar Cancelamento
+                    </button>
+                </form>
+                @endcan
+
+                @can('cancel', $item)
+                <div style="background:#FFF1F2;border:1px solid #FECDD3;border-radius:8px;padding:10px">
+                    <div style="font-size:12px;font-weight:600;color:#9F1239;margin-bottom:8px">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar Item
+                    </div>
+                    <form method="POST" action="{{ route('requests.items.cancel', [$supplyRequest, $item]) }}">
+                        @csrf @method('DELETE')
+                        <textarea name="cancel_reason" class="form-control form-control-sm mb-2"
+                                  rows="2" maxlength="500" required
+                                  placeholder="Motivo do cancelamento…"></textarea>
+                        <button type="submit" class="btn btn-sm btn-danger w-100" style="font-size:12px">
+                            Confirmar Cancelamento
+                        </button>
+                    </form>
+                </div>
+                @endcan
+
+                @can('requestCancellation', $item)
+                <div style="background:#FFF1F2;border:1px solid #FECDD3;border-radius:8px;padding:10px">
+                    <div style="font-size:12px;font-weight:600;color:#9F1239;margin-bottom:8px">
+                        <i class="bi bi-x-circle me-1"></i>Solicitar Cancelamento
+                    </div>
+                    <form method="POST" action="{{ route('requests.items.requestCancellation', [$supplyRequest, $item]) }}">
+                        @csrf
+                        <textarea name="cancel_reason" class="form-control form-control-sm mb-2"
+                                  rows="2" maxlength="500" required
+                                  placeholder="Motivo…"></textarea>
+                        <button type="submit" class="btn btn-sm btn-danger w-100" style="font-size:12px">Enviar</button>
+                    </form>
+                </div>
+                @endcan
+
+            </div>
+        </div>
+
+        {{-- Forçar status (admin) --}}
+        @can('jumpStatus', $item)
+        <div class="mb-4" style="background:#FFFBEB;border:1.5px solid #FDE047;border-radius:8px;padding:10px">
+            <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">
+                <i class="bi bi-lightning-charge-fill me-1"></i>Forçar Status
+            </div>
+            <form method="POST" action="{{ route('requests.items.jumpStatus', [$supplyRequest, $item]) }}" class="d-flex gap-2">
+                @csrf @method('PATCH')
+                <select name="status" class="form-select form-select-sm"
+                        style="font-size:12px;border-color:#FDE047;color:#92400E;background:#FFFBEB">
+                    <option value="" disabled selected>Forçar para…</option>
+                    @foreach(\App\Enums\ItemStatus::cases() as $s)
+                    @if($s !== $item->status)
+                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                    @endif
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm fw-semibold"
+                        style="background:#FEF08A;border-color:#FDE047;color:#7C2D12;white-space:nowrap">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </button>
+            </form>
+        </div>
+        @endcan
+
+        {{-- Histórico de entregas --}}
+        @if($item->deliveries->isNotEmpty())
+        <div style="border-top:1px solid #F1F5F9;padding-top:14px">
+            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">
+                <i class="bi bi-clock-history me-1"></i>Histórico de Entregas
+            </div>
+            <div class="d-flex flex-column gap-2">
+                @foreach($item->deliveries as $d)
+                <div style="background:#F8FAFC;border-radius:6px;padding:8px 10px">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span style="font-weight:700;color:#166534;font-size:14px">
+                            {{ $fmtQ($d->quantity) }}
+                            @if($item->unit)<span style="font-weight:400;color:#94A3B8;font-size:11px"> {{ $item->unit }}</span>@endif
+                        </span>
+                        <span style="color:#94A3B8;font-size:11px">{{ $d->created_at->format('d/m/Y H:i') }}</span>
+                    </div>
+                    <div style="font-size:12px;color:#64748B">{{ $d->registeredBy->name }}</div>
+                    @if($d->notes)
+                    <div style="font-size:12px;color:#94A3B8;margin-top:3px">{{ $d->notes }}</div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+    </div>
+</div>
+@endforeach
+@endpush
 
 {{-- External Orders --}}
 <div class="cs-card mt-4">
@@ -507,7 +694,10 @@
     @php
         $isCompleting = $supplyRequest->status === \App\Enums\RequestStatus::InProgress;
         $canAdvance   = !$isCompleting || $itemsDone;
-        $advanceLabel = $isCompleting ? 'Confirmar Conclusão' : 'Iniciar Atendimento';
+        $isRequester  = !auth()->user()->isBuyerOrAdmin();
+        $advanceLabel = $isCompleting
+            ? ($isRequester ? 'Confirmar Recebimento' : 'Confirmar Conclusão')
+            : 'Iniciar Atendimento';
     @endphp
     <form method="POST" action="{{ route('requests.advanceStatus', $supplyRequest) }}" class="d-inline">
         @csrf
@@ -592,7 +782,7 @@
 
 @if(auth()->user()->isBuyerOrAdmin())
 @push('modals')
-{{-- Modal: número do pedido (quoting → awaitingPayment) --}}
+{{-- Modal: Nº PC ao avançar Quoting → Aguardando Pagamento --}}
 <div class="modal fade" id="orderNumberModal" tabindex="-1" aria-labelledby="orderNumberModalLabel" aria-modal="true">
     <div class="modal-dialog">
         <form method="POST" id="orderNumberForm">
@@ -603,11 +793,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-3" style="font-size:14px">
+                    <p class="text-muted mb-2" style="font-size:14px">
                         Item: <strong id="orderNumberItemName"></strong>
                     </p>
                     <label for="order_number_input" class="form-label fw-semibold">
-                        Nº do Pedido<span class="text-danger">*</span>
+                        Nº do Pedido <span class="text-danger">*</span>
                     </label>
                     <div class="input-group">
                         <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1">PC-</span>
@@ -632,85 +822,8 @@ document.getElementById('orderNumberModal').addEventListener('show.bs.modal', fu
     document.getElementById('order_number_input').value = '';
 });
 </script>
-
-{{-- Modal: cancelar item --}}
-<div class="modal fade" id="cancelItemModal" tabindex="-1" aria-labelledby="cancelItemModalLabel" aria-modal="true">
-    <div class="modal-dialog">
-        <form method="POST" id="cancelItemForm">
-            @csrf @method('DELETE')
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="cancelItemModalLabel">Cancelar Item</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-3" style="font-size:14px">
-                        Cancelar: <strong id="cancelItemName"></strong>
-                    </p>
-                    <label for="cancel_reason_item" class="form-label fw-semibold">
-                        Motivo <span class="text-danger">*</span>
-                    </label>
-                    <textarea id="cancel_reason_item" name="cancel_reason"
-                              class="form-control" rows="3" maxlength="500" required
-                              placeholder="Motivo do cancelamento do item…"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                    <button type="submit" class="btn btn-danger">Cancelar Item</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-<script>
-document.getElementById('cancelItemModal').addEventListener('show.bs.modal', function (e) {
-    const btn = e.relatedTarget;
-    document.getElementById('cancelItemForm').action = btn.dataset.action;
-    document.getElementById('cancelItemName').textContent = btn.dataset.itemName;
-    document.getElementById('cancel_reason_item').value = '';
-});
-</script>
 @endpush
 @endif
-
-@push('modals')
-<div class="modal fade" id="requestCancelItemModal" tabindex="-1" aria-labelledby="requestCancelItemModalLabel" aria-modal="true">
-    <div class="modal-dialog">
-        <form method="POST" id="requestCancelItemForm">
-            @csrf
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="requestCancelItemModalLabel">Solicitar Cancelamento de Item</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-3" style="font-size:14px">
-                        Item: <strong id="requestCancelItemName"></strong>
-                    </p>
-                    <label for="request_cancel_item_reason" class="form-label fw-semibold">
-                        Motivo <span class="text-danger">*</span>
-                    </label>
-                    <textarea id="request_cancel_item_reason" name="cancel_reason"
-                              class="form-control" rows="3" maxlength="500" required
-                              placeholder="Descreva o motivo do cancelamento…"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                    <button type="submit" class="btn btn-danger">Solicitar Cancelamento</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-<script>
-document.getElementById('requestCancelItemModal').addEventListener('show.bs.modal', function (e) {
-    const btn = e.relatedTarget;
-    document.getElementById('requestCancelItemForm').action = btn.dataset.action;
-    document.getElementById('requestCancelItemName').textContent = btn.dataset.itemName;
-    document.getElementById('request_cancel_item_reason').value = '';
-});
-</script>
-@endpush
 
 @can('cancelDirect', $supplyRequest)
 @push('modals')
