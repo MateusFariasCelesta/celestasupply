@@ -326,6 +326,18 @@
         .cs-badge-medium { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
         .cs-badge-high   { background: #FFF1F2; color: #9F1239; border: 1px solid #FECDD3; }
 
+        /* ── Dashboard KPI icons ── */
+        .cs-kpi-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
         /* ── Table ── */
         .table > thead > tr > th {
             background: #F8FAFD;
