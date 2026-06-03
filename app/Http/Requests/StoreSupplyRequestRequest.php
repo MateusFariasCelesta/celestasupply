@@ -24,6 +24,10 @@ class StoreSupplyRequestRequest extends FormRequest
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'items.*.unit'     => ['required', 'string', 'max:50'],
             'items.*.notes'    => ['nullable', 'string'],
+            'files'            => ['nullable', 'array', 'max:10'],
+            'files.*'          => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'file_types'       => ['nullable', 'array'],
+            'file_types.*'     => ['nullable', 'in:quote,invoice,receipt,other'],
         ];
     }
 

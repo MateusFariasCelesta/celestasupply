@@ -14,15 +14,10 @@
         @csrf
 
         <div class="mb-3">
-            <label class="form-label fw-semibold" style="font-size:13px">
-                Código <span class="text-muted fw-normal">(único — ex: 1, 100, 110.01)</span>
-            </label>
+            <label class="form-label fw-semibold" style="font-size:13px">Código</label>
             <input type="text" name="id"
                    class="form-control @error('id') is-invalid @enderror"
                    value="{{ old('id') }}"
-                   placeholder="110.01"
-                   inputmode="decimal"
-                   oninput="this.value = this.value.replace(/[^\d.]/g, '').replace(/(\..*?)\..*/g, '$1')"
                    required autofocus>
             @error('id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>

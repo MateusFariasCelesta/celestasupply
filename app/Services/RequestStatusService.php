@@ -33,7 +33,7 @@ class RequestStatusService
                 ->whereNotIn('status', [ItemStatus::Received->value, ItemStatus::Cancelled->value])
                 ->count();
 
-            if ($blocked > 0) {
+            if ($blocked) {
                 throw new \LogicException(
                     "Há {$blocked} item(ns) que ainda não foram recebidos ou cancelados. Conclua ou cancele todos os itens antes de fechar a solicitação."
                 );
@@ -99,10 +99,10 @@ class RequestStatusService
     {
         $cascade = match($to) {
             RequestStatus::Completed  => [
-                ['statuses' => ['pending', 'quoting', 'awaitingPayment', 'awaitingDelivery'], 'target' => ItemStatus::Received],
+                ['statuses' => [ItemStatus::Pending->value, ItemStatus::Quoting->value, ItemStatus::AwaitingPayment->value, ItemStatus::AwaitingDelivery->value], 'target' => ItemStatus::Received],
             ],
             RequestStatus::Cancelled  => [
-                ['statuses' => ['pending', 'quoting', 'awaitingPayment'], 'target' => ItemStatus::Cancelled],
+                ['statuses' => [ItemStatus::Pending->value, ItemStatus::Quoting->value, ItemStatus::AwaitingPayment->value], 'target' => ItemStatus::Cancelled],
             ],
             default => [],
         };

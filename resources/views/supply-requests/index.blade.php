@@ -2,10 +2,11 @@
 @section('title', 'Solicitações — CelestaSupply')
 
 @section('content')
+@php $isBuyerOrAdmin = auth()->user()->isBuyerOrAdmin(); @endphp
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="cs-page-title mb-0">Solicitações</h1>
     <div class="d-flex gap-2">
-        @if(auth()->user()->isBuyerOrAdmin())
+        @if($isBuyerOrAdmin)
         <button id="btn-export-excel" class="btn btn-sm fw-semibold" style="background:#217346;color:#fff;border:none;border-radius:6px">
             <i class="bi bi-file-earmark-excel me-1"></i>Excel
         </button>
@@ -84,7 +85,7 @@
                     @endforeach
                 </select>
             </div>
-            @if(auth()->user()->isBuyerOrAdmin())
+            @if($isBuyerOrAdmin)
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Solicitante</label>
                 <select id="f-user" class="form-select form-select-sm">
@@ -121,7 +122,7 @@
                     <th data-sort-col="code" style="{{ $thStyle }}">Código <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="title" style="{{ $thStyle }}">Título <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="ccName" style="{{ $thStyle }}">Centro de Custo <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
-                    @if(auth()->user()->isBuyerOrAdmin())
+                    @if($isBuyerOrAdmin)
                     <th data-sort-col="userName" style="{{ $thStyle }}">Solicitante <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     @endif
                     <th data-sort-col="urgencyOrder" style="{{ $thStyle }}">Urgência <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
@@ -140,7 +141,7 @@
                         $sr->user->name,
                         $itemNames,
                     ]));
-                    $urgencyOrder = match($sr->urgency->value) { 'high' => 3, 'medium' => 2, default => 1 };
+                    $urgencyOrder = $sr->urgency->sortOrder();
                 @endphp
                 <tr style="cursor:pointer"
                     onclick="window.location='{{ route('requests.show', $sr) }}'"
@@ -163,7 +164,7 @@
                     </td>
                     <td style="font-size:14px;font-weight:500">{{ $sr->title }}</td>
                     <td style="font-size:13px;color:#64748B">{{ $sr->costCenter->name }}</td>
-                    @if(auth()->user()->isBuyerOrAdmin())
+                    @if($isBuyerOrAdmin)
                     <td style="font-size:13px;color:#64748B">{{ $sr->user->name }}</td>
                     @endif
                     <td><span class="cs-badge {{ $sr->urgency->badgeClass() }}">{{ $sr->urgency->label() }}</span></td>

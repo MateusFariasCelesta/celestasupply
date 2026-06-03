@@ -85,11 +85,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // ── Centros de Custo ──────────────────────────────────────
-        $ccAdm = CostCenter::create(['id' => 'ADM', 'name' => 'Administrativo', 'isActive' => true]);
-        $ccTi  = CostCenter::create(['id' => 'TI',  'name' => 'Tecnologia',     'isActive' => true]);
-        $ccOp  = CostCenter::create(['id' => 'OP',  'name' => 'Operações',      'isActive' => true]);
-        $ccFin = CostCenter::create(['id' => 'FIN', 'name' => 'Financeiro',     'isActive' => true]);
-        $ccMkt = CostCenter::create(['id' => 'MKT', 'name' => 'Marketing',      'isActive' => true]);
+        $ccAdm = CostCenter::create(['id' => 100,   'name' => 'Administrativo', 'isActive' => true]);
+        $ccTi  = CostCenter::create(['id' => 200,   'name' => 'Tecnologia',     'isActive' => true]);
+        $ccOp  = CostCenter::create(['id' => 300,   'name' => 'Operações',      'isActive' => true]);
+        $ccFin = CostCenter::create(['id' => 400,   'name' => 'Financeiro',     'isActive' => true]);
+        $ccMkt = CostCenter::create(['id' => 500,   'name' => 'Marketing',      'isActive' => true]);
 
         // ── Fornecedores ──────────────────────────────────────────
         $sup1 = Supplier::create(['name' => 'Papelaria Central',     'contact' => '(11) 3001-1001', 'isActive' => true]);

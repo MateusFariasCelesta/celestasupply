@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('cost_centers', function (Blueprint $table) {
@@ -16,13 +13,9 @@ return new class extends Migration
             $table->string('name');
             $table->boolean('isActive')->default(true);
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('cost_centers');

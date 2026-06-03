@@ -17,7 +17,6 @@ return new class extends Migration
             $table->unsignedInteger('size_kb');
             $table->foreignId('uploaded_by')->constrained('users');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

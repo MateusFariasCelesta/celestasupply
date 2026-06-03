@@ -34,4 +34,16 @@ enum RequestStatus: string
             self::CancelRequested => 'cs-badge-cancelRequested',
         };
     }
+
+    public function chartColor(): string
+    {
+        return match($this) {
+            self::Draft           => '#94A3B8',
+            self::Pending         => '#3B82F6',
+            self::InProgress      => '#F59E0B',
+            self::Completed       => '#22C55E',
+            self::CancelRequested => '#F43F5E',
+            self::Cancelled       => '#EF4444',
+        };
+    }
 }

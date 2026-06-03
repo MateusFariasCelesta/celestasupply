@@ -16,8 +16,11 @@
 
         <div class="mb-3">
             <label class="form-label fw-semibold" style="font-size:13px">Código</label>
-            <input type="text" class="form-control bg-light" value="{{ $costCenter->id }}" disabled>
-            <div class="form-text">O código não pode ser alterado após a criação.</div>
+            <input type="text" name="id"
+                   class="form-control @error('id') is-invalid @enderror"
+                   value="{{ old('id', $costCenter->id) }}"
+                   required autofocus>
+            @error('id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
 
         <div class="mb-4">

@@ -11,13 +11,12 @@ return new class extends Migration
         Schema::create('external_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supply_request_id')->constrained()->cascadeOnDelete();
-            $table->string('order_number', 100)->nullable();
+            $table->unsignedInteger('order_number')->nullable();
             $table->string('original_name');
             $table->string('path');
             $table->text('notes')->nullable();
             $table->foreignId('registered_by')->constrained('users');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

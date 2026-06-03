@@ -22,7 +22,7 @@ class RequestManagementController extends Controller
             return back()->withErrors(['advance' => $e->getMessage()]);
         }
 
-        return back()->with('success', "Status avançado para: {$supplyRequest->fresh()->status->label()}.");
+        return back()->with('success', "Status avançado para: {$supplyRequest->status->label()}.");
     }
 
     public function cancelDirect(Request $request, SupplyRequest $supplyRequest): RedirectResponse

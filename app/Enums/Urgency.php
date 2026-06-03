@@ -25,4 +25,13 @@ enum Urgency: string
             self::High   => 'cs-badge-high',
         };
     }
+
+    public function sortOrder(): int
+    {
+        return match($this) {
+            self::High   => 3,
+            self::Medium => 2,
+            self::Low    => 1,
+        };
+    }
 }

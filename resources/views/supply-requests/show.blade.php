@@ -101,13 +101,13 @@
                         @endif
                     </td>
                     <td style="font-size:13px;color:#374151">
-                        {{ rtrim(rtrim(number_format((float)$item->quantity, 3, ',', ''), '0'), ',') }}
+                        {{ $item->formattedQuantity() }}
                         @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
                     </td>
                     <td style="font-size:13px">
                         @if($item->order_number)
                         <span style="font-family:monospace;font-weight:600;color:#0369A1">
-                            PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
+                            {{ $item->formattedOrderNumber() }}
                         </span>
                         @else
                         <span style="color:#CBD5E1">—</span>
@@ -154,7 +154,7 @@
             <span class="cs-badge {{ $item->status->badgeClass() }}">{{ $item->status->label() }}</span>
             @if($item->order_number)
             <span class="ms-1" style="font-family:monospace;font-size:11px;color:#0369A1;font-weight:600">
-                PC-{{ str_pad($item->order_number, 4, '0', STR_PAD_LEFT) }}
+                {{ $item->formattedOrderNumber() }}
             </span>
             @endif
         </div>
@@ -505,7 +505,7 @@
                 <tr>
                     <td style="font-size:13px;font-family:monospace;font-weight:600;color:#0369A1">
                         @if($eo->order_number)
-                            {{ str_pad($eo->order_number, 4, '0', STR_PAD_LEFT) }}
+                            {{ str_pad((int) $eo->order_number, 4, '0', STR_PAD_LEFT) }}
                         @else
                             <span style="color:#CBD5E1">—</span>
                         @endif
@@ -694,7 +694,7 @@
     @php
         $isCompleting = $supplyRequest->status === \App\Enums\RequestStatus::InProgress;
         $canAdvance   = !$isCompleting || $itemsDone;
-        $isRequester  = !auth()->user()->isBuyerOrAdmin();
+        $isRequester  = auth()->user()->isRequester();
         $advanceLabel = $isCompleting
             ? ($isRequester ? 'Confirmar Recebimento' : 'Confirmar Conclusão')
             : 'Iniciar Atendimento';

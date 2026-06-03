@@ -77,7 +77,7 @@ class RequestItemController extends Controller
     private function autoAdvanceRequest(SupplyRequest $supplyRequest): void
     {
         if ($supplyRequest->status === RequestStatus::Pending) {
-            $this->statusService->advance($supplyRequest->fresh(), auth()->user());
+            $this->statusService->advance($supplyRequest, auth()->user());
         }
     }
 
@@ -86,7 +86,7 @@ class RequestItemController extends Controller
         $this->authorize('registerDelivery', $supplyRequestItem);
         abort_if($supplyRequestItem->supply_request_id !== $supplyRequest->id, 404);
 
-        $remaining = (float) $supplyRequestItem->quantity - (float) $supplyRequestItem->delivered_quantity;
+        $remaining = $supplyRequestItem->quantity - $supplyRequestItem->delivered_quantity;
 
         $data = $request->validate([
             'quantity' => ['required', 'numeric', 'min:0.001', 'max:' . $remaining],
@@ -99,10 +99,10 @@ class RequestItemController extends Controller
             'registered_by' => auth()->id(),
         ]);
 
-        $newDelivered = (float) $supplyRequestItem->delivered_quantity + (float) $data['quantity'];
+        $newDelivered = $supplyRequestItem->delivered_quantity + $data['quantity'];
         $updates = ['delivered_quantity' => $newDelivered];
 
-        if ($newDelivered >= (float) $supplyRequestItem->quantity) {
+        if ($newDelivered >= $supplyRequestItem->quantity) {
             $updates['status'] = ItemStatus::Received;
         }
 

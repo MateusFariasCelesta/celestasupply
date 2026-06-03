@@ -64,14 +64,6 @@
                 <h6 class="fw-semibold mb-1">Visão Geral por Status</h6>
                 @php
                     $statuses = \App\Enums\RequestStatus::cases();
-                    $statusColors = [
-                        'draft'           => '#94A3B8',
-                        'pending'         => '#3B82F6',
-                        'inProgress'      => '#F59E0B',
-                        'completed'       => '#22C55E',
-                        'cancelRequested' => '#F43F5E',
-                        'cancelled'       => '#EF4444',
-                    ];
                     $total = $byStatus->sum() ?: 1;
                 @endphp
                 <div class="text-muted small mb-3">{{ $byStatus->sum() }} no total</div>
@@ -79,7 +71,7 @@
                 @php
                     $count = (int) $byStatus->get($status->value, 0);
                     $pct   = round($count / $total * 100);
-                    $color = $statusColors[$status->value] ?? '#94A3B8';
+                    $color = $status->chartColor();
                 @endphp
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -106,49 +98,6 @@
         </div>
     </div>
 </div>
-
-{{-- Admin: value charts --}}
-@if($user->isAdmin() && isset($valueLabels))
-<div class="row g-3 mb-4">
-    <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="fw-semibold mb-3">Valor Comprado por Mês</h6>
-                <canvas id="valueByMonthChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="fw-semibold mb-3">Valor por Centro de Custo</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Centro de Custo</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($valueByCostCenter as $row)
-                            <tr>
-                                <td>{{ $row->name }}</td>
-                                <td class="text-end fw-semibold">R$ {{ number_format($row->total, 2, ',', '.') }}</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-3">Nenhum dado de preço registrado.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 
 {{-- ===================== REQUESTER ===================== --}}
 @else
@@ -257,38 +206,6 @@ $statusCards = [
         }
     });
 
-    @if($user->isAdmin() && isset($valueLabels))
-    new Chart(document.getElementById('valueByMonthChart'), {
-        type: 'line',
-        data: {
-            labels: @json($valueLabels),
-            datasets: [{
-                label: 'Valor (R$)',
-                data: @json($valueData),
-                borderColor: 'rgba(16, 185, 129, 1)',
-                backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
-                pointRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#F3F4F6' },
-                    ticks: {
-                        callback: v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                    }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-    @endif
 })();
 </script>
 @endif

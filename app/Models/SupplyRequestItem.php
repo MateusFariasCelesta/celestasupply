@@ -55,4 +55,16 @@ class SupplyRequestItem extends Model
     {
         return $this->hasMany(ItemDelivery::class)->orderBy('created_at');
     }
+
+    public function formattedQuantity(): string
+    {
+        return rtrim(rtrim(number_format((float) $this->quantity, 3, ',', ''), '0'), ',');
+    }
+
+    public function formattedOrderNumber(): ?string
+    {
+        return $this->order_number !== null
+            ? 'PC-' . str_pad($this->order_number, 4, '0', STR_PAD_LEFT)
+            : null;
+    }
 }

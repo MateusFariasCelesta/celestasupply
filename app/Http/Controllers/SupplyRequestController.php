@@ -9,12 +9,14 @@ use App\Models\CostCenter;
 use App\Models\Item;
 use App\Models\SupplyRequest;
 use App\Models\User;
+use App\Services\FileUploadService;
 use App\Services\RequestStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class SupplyRequestController extends Controller
 {
+    public function __construct(private FileUploadService $fileUpload) {}
     public function index(): View
     {
         $this->authorize('viewAny', SupplyRequest::class);
@@ -32,7 +34,7 @@ class SupplyRequestController extends Controller
         }
 
         $supplyRequests = $query->get();
-        $costCenters    = CostCenter::where('isActive', true)->orderBy('name')->get();
+        $costCenters    = CostCenter::where('isActive', true)->orderBy('id')->get();
         $requesters     = auth()->user()->isBuyerOrAdmin()
             ? User::where('isActive', true)->orderBy('name')->get(['id', 'name'])
             : collect();
@@ -44,7 +46,7 @@ class SupplyRequestController extends Controller
     {
         $this->authorize('create', SupplyRequest::class);
 
-        $costCenters = CostCenter::where('isActive', true)->orderBy('name')->get();
+        $costCenters = CostCenter::where('isActive', true)->orderBy('id')->get();
         $items       = Item::where('isActive', true)->orderBy('name')->get();
 
         return view('supply-requests.create', compact('costCenters', 'items'));
@@ -73,6 +75,8 @@ class SupplyRequestController extends Controller
                 'notes'    => $row['notes'] ?? null,
             ]);
         }
+
+        $this->storeAttachments($request, $sr);
 
         if ($data['action'] === 'submit') {
             $statusService->submit($sr, auth()->user());
@@ -109,10 +113,10 @@ class SupplyRequestController extends Controller
     {
         $this->authorize('update', $supplyRequest);
 
-        $costCenters = CostCenter::where('isActive', true)->orderBy('name')->get();
+        $costCenters = CostCenter::where('isActive', true)->orderBy('id')->get();
         $items       = Item::where('isActive', true)->orderBy('name')->get();
 
-        $supplyRequest->load('items.item');
+        $supplyRequest->load('items.item', 'attachments');
 
         return view('supply-requests.edit', compact('supplyRequest', 'costCenters', 'items'));
     }
@@ -139,6 +143,8 @@ class SupplyRequestController extends Controller
                 'notes'    => $row['notes'] ?? null,
             ]);
         }
+
+        $this->storeAttachments($request, $supplyRequest);
 
         if ($data['action'] === 'submit') {
             $statusService->submit($supplyRequest, auth()->user());
@@ -167,6 +173,24 @@ class SupplyRequestController extends Controller
 
         return redirect()->route('requests.index')
             ->with('success', 'Rascunho excluído com sucesso.');
+    }
+
+    private function storeAttachments(\Illuminate\Http\Request $request, SupplyRequest $sr): void
+    {
+        $files = $request->file('files', []);
+        $types = $request->input('file_types', []);
+
+        foreach ($files as $index => $file) {
+            if (!$file || !$file->isValid()) {
+                continue;
+            }
+            $fileData = $this->fileUpload->store($file, "attachments/requests/{$sr->id}");
+            $sr->attachments()->create([
+                'type'        => $types[$index] ?? 'other',
+                'uploaded_by' => auth()->id(),
+                ...$fileData,
+            ]);
+        }
     }
 
     private function resolveItemId(string $raw): int

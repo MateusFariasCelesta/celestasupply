@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class CostCenter extends Model
 {
-
     public $incrementing = false;
     protected $keyType   = 'string';
 
@@ -19,4 +18,6 @@ class CostCenter extends Model
     protected $casts = [
         'isActive' => 'boolean',
     ];
+
+
 }

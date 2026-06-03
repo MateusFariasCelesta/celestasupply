@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('code', 10)->unique()->nullable();
             $table->string('title');
             $table->string('cost_center_id', 20);
-            $table->foreign('cost_center_id')->references('id')->on('cost_centers');
+            $table->foreign('cost_center_id')->references('id')->on('cost_centers')->onUpdate('cascade');
             $table->foreignId('user_id')->constrained('users');
             $table->enum('urgency', ['low', 'medium', 'high'])->default('low');
             $table->enum('status', ['draft', 'pending', 'inProgress', 'completed', 'cancelled', 'cancelRequested'])->default('draft');

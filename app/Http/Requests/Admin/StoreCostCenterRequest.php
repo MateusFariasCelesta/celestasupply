@@ -14,7 +14,7 @@ class StoreCostCenterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id'       => ['required', 'string', 'max:20', 'unique:cost_centers,id', 'regex:/^\d+(\.\d+)?$/'],
+            'id'       => ['required', 'string', 'max:20', 'unique:cost_centers,id'],
             'name'     => ['required', 'string', 'max:255'],
             'isActive' => ['sometimes', 'boolean'],
         ];
@@ -31,7 +31,6 @@ class StoreCostCenterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'id.regex'  => 'O código deve conter apenas números (ex: 1, 100, 110.01).',
             'id.unique' => 'Já existe um centro de custo com esse código.',
         ];
     }

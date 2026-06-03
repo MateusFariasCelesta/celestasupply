@@ -257,7 +257,7 @@
         document.getElementById('btn-add-row').addEventListener('click', () => addRow());
 
         const rows = window.__initialItemRows || [];
-        rows.length ? rows.forEach(r => addRow(r)) : addRow();
+        rows.length ? rows.forEach(addRow) : addRow();
     });
 })();
 </script>
