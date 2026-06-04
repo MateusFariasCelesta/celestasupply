@@ -6,6 +6,7 @@ use App\Enums\ItemStatus;
 use App\Enums\RequestStatus;
 use App\Models\SupplyRequest;
 use App\Models\SupplyRequestItem;
+use App\Services\NotificationService;
 use App\Services\RequestStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,10 @@ use Illuminate\Validation\Rules\Enum;
 
 class RequestItemController extends Controller
 {
-    public function __construct(private RequestStatusService $statusService) {}
+    public function __construct(
+        private RequestStatusService $statusService,
+        private NotificationService $notifications,
+    ) {}
 
     public function updateStatus(Request $request, SupplyRequest $supplyRequest, SupplyRequestItem $supplyRequestItem): RedirectResponse
     {
@@ -30,6 +34,10 @@ class RequestItemController extends Controller
         }
 
         $supplyRequestItem->update(['status' => $next, ...$extra]);
+
+        if ($next === ItemStatus::AwaitingDelivery) {
+            $this->notifications->scheduleAwaitingDelivery($supplyRequest);
+        }
 
         $this->autoAdvanceRequest($supplyRequest);
 
@@ -68,6 +76,10 @@ class RequestItemController extends Controller
             'cancel_reason'   => $keepReason ? $supplyRequestItem->cancel_reason : null,
             'previous_status' => $keepReason ? $supplyRequestItem->previous_status : null,
         ]);
+
+        if ($to === ItemStatus::AwaitingDelivery) {
+            $this->notifications->scheduleAwaitingDelivery($supplyRequest);
+        }
 
         $this->autoAdvanceRequest($supplyRequest);
 

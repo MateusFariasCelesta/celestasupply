@@ -7,9 +7,11 @@ use App\Enums\RequestStatus;
 use App\Models\RequestStatusHistory;
 use App\Models\SupplyRequest;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class RequestStatusService
 {
+    public function __construct(private NotificationService $notifications) {}
     public const TRANSITIONS = [
         'pending'    => RequestStatus::InProgress,
         'inProgress' => RequestStatus::Completed,
@@ -41,6 +43,10 @@ class RequestStatusService
         }
 
         $this->transition($sr, $next, $actor);
+
+        if ($next === RequestStatus::Completed) {
+            $this->notifications->notifyCompleted($sr);
+        }
     }
 
     public function jumpToStatus(SupplyRequest $sr, RequestStatus $to, User $actor): void
@@ -51,17 +57,20 @@ class RequestStatusService
     public function submit(SupplyRequest $sr, User $actor): void
     {
         $this->transition($sr, RequestStatus::Pending, $actor);
+        $this->notifications->notifySubmitted($sr);
     }
 
     public function requestCancellation(SupplyRequest $sr, User $actor, string $reason): void
     {
         $sr->update(['cancellation_reason' => $reason]);
         $this->transition($sr, RequestStatus::CancelRequested, $actor);
+        $this->notifications->notifyCancellationRequested($sr);
     }
 
     public function approveCancellation(SupplyRequest $sr, User $actor): void
     {
         $this->transition($sr, RequestStatus::Cancelled, $actor);
+        $this->notifications->notifyCancelled($sr);
     }
 
     public function refuseCancellation(SupplyRequest $sr, User $actor): void

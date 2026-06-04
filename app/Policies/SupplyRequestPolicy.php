@@ -59,7 +59,7 @@ class SupplyRequestPolicy
     public function advanceStatus(User $user, SupplyRequest $sr): bool
     {
         if ($user->isBuyerOrAdmin()) {
-            return (new RequestStatusService())->canAdvance($sr);
+            return app(RequestStatusService::class)->canAdvance($sr);
         }
 
         // Requester pode confirmar conclusão (inProgress → completed)
