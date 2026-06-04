@@ -32,4 +32,12 @@ class StoreUserRequest extends FormRequest
             'whatsapp_phone' => 'WhatsApp',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique'       => 'Este e-mail já está cadastrado.',
+            'password.confirmed' => 'As senhas não conferem.',
+        ];
+    }
 }

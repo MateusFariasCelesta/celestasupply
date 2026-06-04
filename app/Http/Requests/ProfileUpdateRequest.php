@@ -28,4 +28,11 @@ class ProfileUpdateRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'Este e-mail já está em uso por outra conta.',
+        ];
+    }
 }

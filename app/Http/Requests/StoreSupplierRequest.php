@@ -26,4 +26,5 @@ class StoreSupplierRequest extends FormRequest
             'contact' => 'contato',
         ];
     }
+
 }

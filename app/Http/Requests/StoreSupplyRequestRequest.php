@@ -42,6 +42,8 @@ class StoreSupplyRequestRequest extends FormRequest
             'items'          => 'itens',
             'items.*.item_id'  => 'item',
             'items.*.quantity' => 'quantidade',
+            'items.*.unit'     => 'unidade',
         ];
     }
+
 }

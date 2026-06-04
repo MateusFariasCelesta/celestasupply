@@ -202,6 +202,20 @@
             letter-spacing: .06em;
         }
 
+        .cs-user-profile-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            border-radius: 8px;
+            padding: 4px 8px;
+            transition: background .15s;
+        }
+
+        .cs-user-profile-link:hover {
+            background: rgba(255,255,255,.08);
+        }
+
         .cs-logout {
             background: none;
             border: none;
@@ -573,13 +587,15 @@
     </nav>
 
     <div class="cs-user">
-        <div class="cs-avatar">
-            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-        </div>
-        <div class="cs-user-info">
-            <div class="cs-user-name">{{ auth()->user()->name }}</div>
-            <div class="cs-user-role">{{ auth()->user()->role }}</div>
-        </div>
+        <a href="{{ route('profile.edit') }}" class="cs-user-profile-link" title="Meu perfil">
+            <div class="cs-avatar">
+                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+            </div>
+            <div class="cs-user-info">
+                <div class="cs-user-name">{{ auth()->user()->name }}</div>
+                <div class="cs-user-role">{{ auth()->user()->role }}</div>
+            </div>
+        </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="cs-logout" title="Sair">
@@ -623,6 +639,10 @@
             <i class="bi bi-people"></i> Usuários
         </a>
         @endif
+        <a href="{{ route('profile.edit') }}"
+           class="cs-mobile-nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+            <i class="bi bi-person-circle"></i> Meu Perfil
+        </a>
         <div class="cs-mobile-divider"></div>
         <div style="padding:4px 14px 0;font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;font-weight:600">
             {{ auth()->user()->name }} &mdash; {{ auth()->user()->role }}

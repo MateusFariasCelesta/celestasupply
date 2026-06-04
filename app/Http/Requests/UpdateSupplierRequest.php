@@ -34,4 +34,5 @@ class UpdateSupplierRequest extends FormRequest
             'contact' => 'contato',
         ];
     }
+
 }
