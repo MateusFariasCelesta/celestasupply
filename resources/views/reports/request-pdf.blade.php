@@ -110,8 +110,18 @@
 {{-- Cabeçalho --}}
 <table class="header-top">
     <tr>
-        <td><img src="{{ $logoSrc }}" class="logo" alt="Celesta Mineração"></td>
-        <td class="header-date">Gerado em {{ now()->format('d/m/Y H:i') }}</td>
+        <td style="width:1%;white-space:nowrap">
+            <img src="{{ $logoSrc }}" class="logo" alt="Celesta Mineração">
+        </td>
+        <td style="padding-left:12px;vertical-align:middle">
+            <div style="font-size:11px;font-weight:700;color:#1E3A5F;line-height:1.4">CELESTA MINERAÇÃO S.A.</div>
+            <div style="font-size:8.5px;color:#374151;line-height:1.6">
+                CNPJ: 17.755.975/0001-22 &nbsp;|&nbsp; IE: 155214101<br>
+                PA 275 - S/N - ZONA RURAL - Curionópolis - PA - 68523-000<br>
+                Telefone: (94) 3346-5857 &nbsp;|&nbsp; E-mail: controladoria@celestamineracao.com.br
+            </div>
+        </td>
+        <td class="header-date" style="white-space:nowrap">Gerado em {{ now()->format('d/m/Y H:i') }}</td>
     </tr>
 </table>
 <div class="header-divider"></div>
