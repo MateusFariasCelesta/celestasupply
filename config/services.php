@@ -18,11 +18,7 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
-    'resend' => [
-        'key' => env('RESEND_API_KEY'),
-    ],
-
-    'ses' => [
+'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
@@ -33,11 +29,6 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
-    ],
-
-    'whatsapp' => [
-        'url'   => env('WHATSAPP_SERVICE_URL'),   // ex: http://localhost:3001
-        'token' => env('WHATSAPP_SERVICE_TOKEN'), // mesmo valor de API_TOKEN no .env do Node
     ],
 
 ];
