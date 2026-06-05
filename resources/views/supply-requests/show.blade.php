@@ -89,31 +89,27 @@
             </thead>
             <tbody>
                 @foreach($supplyRequest->items as $item)
-                <tr @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
+                <tr data-item-row="{{ $item->id }}" @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
                     <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="cs-badge {{ $item->status->badgeClass() }}">{{ $item->status->label() }}</span>
+                            <span class="cs-badge {{ $item->status->badgeClass() }}" id="badge-{{ $item->id }}">{{ $item->status->label() }}</span>
                             @can('updateStatus', $item)
-                            @if($item->status === \App\Enums\ItemStatus::Quoting)
+                            @if($item->status->nextStatus())
                             <button type="button"
+                                    id="btn-advance-{{ $item->id }}"
                                     class="btn btn-sm btn-outline-secondary"
                                     style="font-size:11px;padding:2px 8px"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#orderNumberModal"
-                                    data-action="{{ route('requests.items.status', [$supplyRequest, $item]) }}"
-                                    data-item-name="{{ $item->item->name }}">
+                                    onclick="stageAdvance({{ $item->id }}, {{ $item->status->value === 'quoting' ? 'true' : 'false' }}, @js($item->item->name), @js($item->status->nextStatus()->label()))">
                                 <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
                             </button>
-                            @else
-                            <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
-                                @csrf @method('PATCH')
-                                <button type="submit"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        style="font-size:11px;padding:2px 8px">
-                                    <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
-                                </button>
-                            </form>
+                            <button type="button"
+                                    id="btn-unstage-{{ $item->id }}"
+                                    class="btn btn-sm btn-outline-warning d-none"
+                                    style="font-size:11px;padding:2px 8px"
+                                    onclick="unstage({{ $item->id }})">
+                                <i class="bi bi-x"></i>
+                            </button>
                             @endif
                             @endcan
                         </div>
@@ -292,29 +288,13 @@
             <div class="d-flex flex-column gap-2">
 
                 @can('updateStatus', $item)
-                @if($item->status === \App\Enums\ItemStatus::Quoting)
-                <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
-                    @csrf @method('PATCH')
-                    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px">
-                        <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">
-                            <i class="bi bi-arrow-right me-1"></i>Avançar para {{ $item->status->nextStatus()->label() }}
-                        </div>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1;font-size:12px">PC-</span>
-                            <input type="number" name="order_number" class="form-control"
-                                   min="1" max="9999" required placeholder="0001" style="font-family:monospace">
-                            <button type="submit" class="btn btn-outline-secondary" style="font-size:12px">Confirmar</button>
-                        </div>
-                    </div>
-                </form>
-                @else
-                <form method="POST" action="{{ route('requests.items.status', [$supplyRequest, $item]) }}">
-                    @csrf @method('PATCH')
-                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
-                            style="font-size:12px;text-align:left;padding:7px 12px">
-                        <i class="bi bi-arrow-right me-2"></i>Avançar para {{ $item->status->nextStatus()->label() }}
-                    </button>
-                </form>
+                @if($item->status->nextStatus())
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary w-100"
+                        style="font-size:12px;text-align:left;padding:7px 12px"
+                        onclick="stageAdvance({{ $item->id }}, {{ $item->status->value === 'quoting' ? 'true' : 'false' }}, @js($item->item->name), @js($item->status->nextStatus()->label()))">
+                    <i class="bi bi-arrow-right me-2"></i>Avançar para {{ $item->status->nextStatus()->label() }}
+                </button>
                 @endif
                 @endcan
 
@@ -799,52 +779,29 @@
 </div>
 @endcan
 
-@endsection
-
-@if(auth()->user()->isBuyerOrAdmin())
-@push('modals')
-{{-- Modal: Nº PC ao avançar Quoting → Aguardando Pagamento --}}
-<div class="modal fade" id="orderNumberModal" tabindex="-1" aria-labelledby="orderNumberModalLabel" aria-modal="true">
-    <div class="modal-dialog">
-        <form method="POST" id="orderNumberForm">
-            @csrf @method('PATCH')
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="orderNumberModalLabel">Número do Pedido</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-2" style="font-size:14px">
-                        Item: <strong id="orderNumberItemName"></strong>
-                    </p>
-                    <label for="order_number_input" class="form-label fw-semibold">
-                        Nº do Pedido <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1">PC-</span>
-                        <input type="number" id="order_number_input" name="order_number"
-                               class="form-control" min="1" max="9999" required
-                               placeholder="0001" style="font-family:monospace">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Confirmar</button>
-                </div>
-            </div>
-        </form>
+{{-- Barra de confirmação de status em lote --}}
+<div id="batch-bar" class="d-none"
+     style="position:fixed;bottom:0;left:0;right:0;z-index:1040;
+            background:#1E293B;padding:12px 24px;
+            display:flex;align-items:center;justify-content:space-between;gap:12px;
+            box-shadow:0 -4px 20px rgba(0,0,0,.25)">
+    <span style="color:#fff;font-size:14px;font-weight:500">
+        <i class="bi bi-clock-history me-2" style="color:#60A5FA"></i>
+        <span id="batch-count">0</span> item(ns) com status pendente
+    </span>
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm" onclick="clearAllStaged()"
+                style="color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2)">
+            Descartar
+        </button>
+        <button id="btn-confirm-batch" class="btn btn-sm btn-primary" onclick="confirmBatch()">
+            <i class="bi bi-check me-1"></i>Confirmar alterações
+        </button>
     </div>
 </div>
-<script>
-document.getElementById('orderNumberModal').addEventListener('show.bs.modal', function (e) {
-    const btn = e.relatedTarget;
-    document.getElementById('orderNumberForm').action = btn.dataset.action;
-    document.getElementById('orderNumberItemName').textContent = btn.dataset.itemName;
-    document.getElementById('order_number_input').value = '';
-});
-</script>
-@endpush
-@endif
+
+@endsection
+
 
 @can('cancelDirect', $supplyRequest)
 @push('modals')
@@ -921,8 +878,123 @@ document.addEventListener('DOMContentLoaded', function () {
 @endpush
 @endcan
 
+@push('modals')
+{{-- Modal: número PC para avanço em lote --}}
+<div class="modal fade" id="batchOrderModal" tabindex="-1" aria-modal="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Número do Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2" style="font-size:14px">
+                    Item: <strong id="batchOrderItemName"></strong>
+                </p>
+                <label class="form-label fw-semibold">
+                    Nº do Pedido <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1">PC-</span>
+                    <input type="number" id="batchOrderInput" class="form-control"
+                           min="1" max="9999" placeholder="0001" style="font-family:monospace">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmBatchOrderModal()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
 @push('scripts')
 <script>
+// ── Batch status staging ──────────────────────────────────────────────────────
+const BATCH_URL   = @js(route('requests.items.batchStatus', $supplyRequest));
+const BATCH_CSRF  = @js(csrf_token());
+
+let staged    = {};          // { [itemId]: { order_number? } }
+let batchItemId = null;      // item aguardando número PC no modal
+
+function stageAdvance(id, isQuoting, itemName, nextLabel) {
+    if (isQuoting) {
+        batchItemId = id;
+        document.getElementById('batchOrderItemName').textContent = itemName;
+        document.getElementById('batchOrderInput').value = '';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('batchOrderModal')).show();
+    } else {
+        commitStage(id, {});
+    }
+}
+
+function confirmBatchOrderModal() {
+    const val = parseInt(document.getElementById('batchOrderInput').value);
+    if (!val || val < 1) {
+        document.getElementById('batchOrderInput').classList.add('is-invalid');
+        return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('batchOrderModal')).hide();
+    commitStage(batchItemId, { order_number: val });
+}
+
+function commitStage(id, extra) {
+    staged[id] = extra;
+    document.getElementById(`btn-advance-${id}`)?.classList.add('d-none');
+    document.getElementById(`btn-unstage-${id}`)?.classList.remove('d-none');
+    document.querySelector(`tr[data-item-row="${id}"]`)?.classList.add('table-warning');
+    updateBar();
+}
+
+function unstage(id) {
+    delete staged[id];
+    document.getElementById(`btn-advance-${id}`)?.classList.remove('d-none');
+    document.getElementById(`btn-unstage-${id}`)?.classList.add('d-none');
+    document.querySelector(`tr[data-item-row="${id}"]`)?.classList.remove('table-warning');
+    updateBar();
+}
+
+function clearAllStaged() {
+    Object.keys(staged).forEach(id => unstage(parseInt(id)));
+}
+
+function updateBar() {
+    const count = Object.keys(staged).length;
+    document.getElementById('batch-count').textContent = count;
+    document.getElementById('batch-bar').classList.toggle('d-none', count === 0);
+}
+
+async function confirmBatch() {
+    const items = Object.entries(staged).map(([id, data]) => ({ id: parseInt(id), ...data }));
+    const btn   = document.getElementById('btn-confirm-batch');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando…';
+
+    try {
+        const resp = await fetch(BATCH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': BATCH_CSRF },
+            body: JSON.stringify({ items }),
+        });
+
+        if (resp.ok) {
+            window.location.reload();
+        } else {
+            const json = await resp.json().catch(() => ({}));
+            alert(json.message || 'Erro ao salvar. Tente novamente.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check me-1"></i>Confirmar alterações';
+        }
+    } catch {
+        alert('Erro de conexão. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check me-1"></i>Confirmar alterações';
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 document.querySelectorAll('.btn-pdf-dl').forEach(function (item) {
     item.addEventListener('click', function () {
         var url = this.dataset.url;

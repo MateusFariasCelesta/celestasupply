@@ -8,8 +8,10 @@ use App\Models\SupplyRequest;
 use App\Models\SupplyRequestItem;
 use App\Services\NotificationService;
 use App\Services\RequestStatusService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Enum;
 
 class RequestItemController extends Controller
@@ -36,7 +38,7 @@ class RequestItemController extends Controller
         $supplyRequestItem->update(['status' => $next, ...$extra]);
 
         if ($next === ItemStatus::AwaitingDelivery) {
-            $this->notifications->scheduleAwaitingDelivery($supplyRequest);
+            $this->notifications->notifyAwaitingDelivery($supplyRequest);
         }
 
         $this->autoAdvanceRequest($supplyRequest);
@@ -84,6 +86,49 @@ class RequestItemController extends Controller
         $this->autoAdvanceRequest($supplyRequest);
 
         return back()->with('success', "Item alterado para: {$to->label()}.");
+    }
+
+    public function batchStatus(Request $request, SupplyRequest $supplyRequest): JsonResponse
+    {
+        $this->authorize('view', $supplyRequest);
+
+        $data = $request->validate([
+            'items'                => ['required', 'array', 'min:1'],
+            'items.*.id'           => ['required', 'integer'],
+            'items.*.order_number' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $movedToAwaitingDelivery = false;
+
+        DB::transaction(function () use ($data, $supplyRequest, &$movedToAwaitingDelivery) {
+            foreach ($data['items'] as $entry) {
+                $item = $supplyRequest->items()->with('item')->findOrFail($entry['id']);
+
+                $this->authorize('updateStatus', $item);
+
+                $next    = $item->status->nextStatus();
+                $updates = ['status' => $next];
+
+                if ($item->status === ItemStatus::Quoting) {
+                    $updates['order_number'] = $entry['order_number'];
+                }
+
+                $item->update($updates);
+
+                if ($next === ItemStatus::AwaitingDelivery) {
+                    $movedToAwaitingDelivery = true;
+                }
+            }
+        });
+
+        $supplyRequest->refresh();
+        $this->autoAdvanceRequest($supplyRequest);
+
+        if ($movedToAwaitingDelivery) {
+            $this->notifications->notifyAwaitingDelivery($supplyRequest);
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     private function autoAdvanceRequest(SupplyRequest $supplyRequest): void

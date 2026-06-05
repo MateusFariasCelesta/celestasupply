@@ -31,7 +31,7 @@
                     @enderror
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label for="email" class="form-label">E-mail</label>
                     <input id="email" name="email" type="email"
                            class="form-control @error('email') is-invalid @enderror"
@@ -39,6 +39,22 @@
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                </div>
+
+                <div class="mb-4">
+                    <label for="whatsapp_phone" class="form-label">WhatsApp</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-whatsapp" style="color:#25D366"></i></span>
+                        <input id="whatsapp_phone" name="whatsapp_phone" type="tel"
+                               class="form-control @error('whatsapp_phone') is-invalid @enderror"
+                               value="{{ old('whatsapp_phone', $user->whatsapp_phone) }}"
+                               placeholder="5594999999999" autocomplete="tel"
+                               oninput="phoneMask(this)">
+                        @error('whatsapp_phone')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-text">Com DDI. Ex: 5594999999999</div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-sm px-4">
