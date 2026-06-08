@@ -14,22 +14,22 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'           => ['required', 'string', 'max:255'],
-            'email'          => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password'       => ['required', 'string', 'min:8', 'confirmed'],
-            'role'           => ['required', 'in:requester,buyer,admin'],
-            'whatsapp_phone' => ['nullable', 'string', 'max:20'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role'     => ['required', 'in:requester,buyer,admin'],
+            'phone'    => ['nullable', 'string', 'max:20'],
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'name'           => 'nome',
-            'email'          => 'e-mail',
-            'password'       => 'senha',
-            'role'           => 'perfil',
-            'whatsapp_phone' => 'WhatsApp',
+            'name'     => 'nome',
+            'email'    => 'e-mail',
+            'password' => 'senha',
+            'role'     => 'perfil',
+            'phone'    => 'telefone',
         ];
     }
 

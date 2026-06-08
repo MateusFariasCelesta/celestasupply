@@ -15,7 +15,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['requester', 'buyer', 'admin'])->default('requester');
-            $table->string('whatsapp_phone', 20)->nullable();
+            $table->string('phone', 20)->nullable();
             $table->tinyInteger('isActive')->default(1);
             $table->rememberToken();
             $table->timestamps();

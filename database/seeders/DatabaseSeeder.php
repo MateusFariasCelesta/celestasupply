@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'admin',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0001',
+            'phone' => '(11) 99001-0001',
         ]);
 
         $buyer1 = User::create([
@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'buyer',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0002',
+            'phone' => '(11) 99001-0002',
         ]);
 
         $buyer2 = User::create([
@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'buyer',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0003',
+            'phone' => '(11) 99001-0003',
         ]);
 
         $req1 = User::create([
@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'requester',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0004',
+            'phone' => '(11) 99001-0004',
         ]);
 
         $req2 = User::create([
@@ -63,7 +63,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'requester',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0005',
+            'phone' => '(11) 99001-0005',
         ]);
 
         $req3 = User::create([
@@ -72,7 +72,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'requester',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0006',
+            'phone' => '(11) 99001-0006',
         ]);
 
         $req4 = User::create([
@@ -81,7 +81,7 @@ class DatabaseSeeder extends Seeder
             'password'       => Hash::make('password'),
             'role'           => 'requester',
             'isActive'       => true,
-            'whatsapp_phone' => '(11) 99001-0007',
+            'phone' => '(11) 99001-0007',
         ]);
 
         // ── Centros de Custo ──────────────────────────────────────
