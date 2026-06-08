@@ -22,29 +22,29 @@ class NotificationService
     {
         $sr->loadMissing(['user', 'costCenter', 'items.item']);
 
-        Mail::to($sr->user->email)->send(new RequestSubmittedRequesterMail($sr));
-        Mail::to($this->buyersAddress())->send(new RequestSubmittedBuyerMail($sr));
+        Mail::mailer('mailjet-api')->to($sr->user->email)->queue(new RequestSubmittedRequesterMail($sr));
+        Mail::mailer('mailjet-api')->to($this->buyersAddress())->queue(new RequestSubmittedBuyerMail($sr));
     }
 
     public function notifyCompleted(SupplyRequest $sr): void
     {
         $sr->loadMissing(['user', 'costCenter', 'items']);
 
-        Mail::to($sr->user->email)->send(new RequestCompletedMail($sr));
+        Mail::mailer('mailjet-api')->to($sr->user->email)->queue(new RequestCompletedMail($sr));
     }
 
     public function notifyCancelled(SupplyRequest $sr): void
     {
         $sr->loadMissing(['user', 'costCenter']);
 
-        Mail::to($sr->user->email)->send(new RequestCancelledMail($sr));
+        Mail::mailer('mailjet-api')->to($sr->user->email)->queue(new RequestCancelledMail($sr));
     }
 
     public function notifyCancellationRequested(SupplyRequest $sr): void
     {
         $sr->loadMissing(['user', 'costCenter']);
 
-        Mail::to($this->buyersAddress())->send(new CancellationRequestedMail($sr));
+        Mail::mailer('mailjet-api')->to($this->buyersAddress())->queue(new CancellationRequestedMail($sr));
     }
 
     public function notifyAwaitingDelivery(SupplyRequest $sr): void
@@ -57,6 +57,6 @@ class NotificationService
 
         if ($awaitingItems->isEmpty()) return;
 
-        Mail::to($sr->user->email)->send(new AwaitingDeliveryMail($sr, $awaitingItems));
+        Mail::mailer('mailjet-api')->to($sr->user->email)->queue(new AwaitingDeliveryMail($sr, $awaitingItems));
     }
 }
