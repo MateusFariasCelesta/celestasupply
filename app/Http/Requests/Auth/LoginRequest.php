@@ -33,6 +33,7 @@ class LoginRequest extends FormRequest
         ];
     }
 
+
     /**
      * Attempt to authenticate the request's credentials.
      *
@@ -47,6 +48,14 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        if (! Auth::user()->isActive) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Sua conta está desativada. Entre em contato com o administrador.',
             ]);
         }
 

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'url'   => env('WHATSAPP_SERVICE_URL'),   // ex: http://localhost:3001
+        'token' => env('WHATSAPP_SERVICE_TOKEN'), // mesmo valor de API_TOKEN no .env do Node
+    ],
+
 ];
