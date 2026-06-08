@@ -73,6 +73,10 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ], 
+        "post-install-cmd": [
+        "@php artisan key:generate --ansi",
+        "@php artisan migrate --force"
         ]
     },
     "extra": {
