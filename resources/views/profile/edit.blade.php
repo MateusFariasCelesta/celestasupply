@@ -42,15 +42,15 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="whatsapp_phone" class="form-label">WhatsApp</label>
+                    <label for="phone" class="form-label">Telefone</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-whatsapp" style="color:#25D366"></i></span>
-                        <input id="whatsapp_phone" name="whatsapp_phone" type="tel"
-                               class="form-control @error('whatsapp_phone') is-invalid @enderror"
-                               value="{{ old('whatsapp_phone', $user->whatsapp_phone) }}"
+                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                        <input id="phone" name="phone" type="tel"
+                               class="form-control @error('phone') is-invalid @enderror"
+                               value="{{ old('phone', $user->phone) }}"
                                placeholder="5594999999999" autocomplete="tel"
                                oninput="phoneMask(this)">
-                        @error('whatsapp_phone')
+                        @error('phone')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

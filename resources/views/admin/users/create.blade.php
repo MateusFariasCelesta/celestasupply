@@ -56,15 +56,15 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label fw-semibold" style="font-size:13px">
-                    WhatsApp <span class="text-muted fw-normal">(opcional)</span>
+                    Telefone <span class="text-muted fw-normal">(opcional)</span>
                 </label>
-                <input type="text" name="whatsapp_phone"
-                       class="form-control @error('whatsapp_phone') is-invalid @enderror"
-                       value="{{ old('whatsapp_phone') }}"
+                <input type="text" name="phone"
+                       class="form-control @error('phone') is-invalid @enderror"
+                       value="{{ old('phone') }}"
                        placeholder="(11) 99999-9999 ou +1 555 0000"
                        oninput="phoneMask(this)"
                        inputmode="numeric">
-                @error('whatsapp_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
 

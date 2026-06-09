@@ -17,7 +17,7 @@
                     <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Nome</th>
                     <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">E-mail</th>
                     <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Perfil</th>
-                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">WhatsApp</th>
+                    <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Telefone</th>
                     <th style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.04em">Status</th>
                     <th></th>
                 </tr>
@@ -43,7 +43,7 @@
                     </td>
                     <td style="font-size:14px;color:#475569">{{ $u->email }}</td>
                     <td><span class="badge bg-{{ $roleColor }}">{{ $roleLabel }}</span></td>
-                    <td style="font-size:14px;color:#475569">{{ $u->whatsapp_phone ?? '—' }}</td>
+                    <td style="font-size:14px;color:#475569">{{ $u->phone ?? '—' }}</td>
                     <td>
                         @if($u->isActive)
                             <span class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>

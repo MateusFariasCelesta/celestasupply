@@ -20,7 +20,7 @@
 
 ## ÉPICO 2 — Autenticação ✅
 
-- [x] Personalizar migration `users`: adicionar `role`, `isActive`, `whatsapp_phone`
+- [x] Personalizar migration `users`: adicionar `role`, `isActive`, `phone`
 - [x] Atualizar Model `User`: `$fillable`, casts, helpers `isAdmin()`, `isBuyer()`, `isRequester()`, `isBuyerOrAdmin()`
 - [x] Remover rota de auto-cadastro (register)
 - [x] Blade: tela de login (`/login`) com checkbox "Lembrar-me"
@@ -34,7 +34,7 @@
 - [x] Policy: `UserPolicy` (somente admin)
 - [x] Controller: `Admin\UserController` (index, create, store, edit, update, toggleActive)
 - [x] Blade: `admin/users/index` — listagem com status ativo/inativo
-- [x] Blade: `admin/users/create` — formulário (name, email, role, whatsapp_phone, password)
+- [x] Blade: `admin/users/create` — formulário (name, email, role, phone, password)
 - [x] Blade: `admin/users/edit`
 - [x] Rota: `PATCH /admin/users/{id}/toggleActive`
 
