@@ -1,7 +1,6 @@
 #!/bin/bash
-# Liga o worker em segundo plano (&)
-php artisan queue:work --vhost=/ &
+# Make sure this file has executable permissions, run `chmod +x railway/run-worker.sh`
 
-# Inicia o servidor web principal (substitua pelo comando padrão do seu app)
-# Se estiver usando o padrão do Railway (Nixpacks), geralmente é:
-php artisan serve --host 0.0.0.0 --port ${PORT:-8080}
+# This command runs the queue worker.
+# An alternative is to use the php artisan queue:listen command
+php artisan queue:work
