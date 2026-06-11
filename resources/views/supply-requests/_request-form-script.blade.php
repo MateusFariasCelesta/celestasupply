@@ -1,8 +1,12 @@
 @push('scripts')
 <script>
+// Expor globalmente para componentes reutilizáveis
+window.CATALOG  = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name])->values());
+window.ADD_URL  = '{{ route('items.create') }}';
+
 (function () {
-    const CATALOG  = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name])->values());
-    const ADD_URL  = '{{ route('items.create') }}';
+    const CATALOG  = window.CATALOG;
+    const ADD_URL  = window.ADD_URL;
     let rowCount = 0;
 
     function esc(str) {
