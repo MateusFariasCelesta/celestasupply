@@ -2,7 +2,7 @@
 <script>
 // Expor globalmente para componentes reutilizáveis
 window.CATALOG  = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name])->values());
-window.ADD_URL  = '{{ route('items.create') }}';
+window.ADD_URL  = '{{ route('items.inline') }}';
 
 (function () {
     const CATALOG  = window.CATALOG;
@@ -266,6 +266,133 @@ window.ADD_URL  = '{{ route('items.create') }}';
         // Fecha ao clicar fora
         document.addEventListener('click', e => { if (!tr.contains(e.target)) close(); });
     }
+
+    // Função pública para inicializar picker em modal (sem estar em uma tabela)
+    window.wireModalPicker = function(element) {
+        const btn       = element.querySelector('.js-btn');
+        const label     = element.querySelector('.js-label');
+        const hid       = element.querySelector('.js-id');
+        const panel     = element.querySelector('.js-panel');
+        const search    = element.querySelector('.js-search');
+        const list      = element.querySelector('.js-list');
+        const createBtn = element.querySelector('.js-create-btn');
+        const createLbl = element.querySelector('.js-create-label');
+
+        function renderList(q) {
+            const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            const hits  = terms.length
+                ? CATALOG.filter(i => terms.every(t => i.name.toLowerCase().includes(t))).slice(0, 25)
+                : CATALOG.slice(0, 25);
+
+            list.innerHTML = '';
+
+            if (!hits.length) {
+                list.innerHTML = '<div style="padding:8px 12px;font-size:13px;color:#94A3B8">Nenhum resultado.</div>';
+                return;
+            }
+
+            hits.forEach(function (item) {
+                const d = document.createElement('div');
+                d.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px';
+                d.innerHTML = `<i class="bi bi-box" style="color:#94A3B8;font-size:12px;flex-shrink:0"></i>${esc(item.name)}`;
+                d.addEventListener('mouseenter', () => d.style.background = '#F1F5F9');
+                d.addEventListener('mouseleave', () => d.style.background = '');
+                d.addEventListener('click', () => {
+                    hid.value = item.id;
+                    label.textContent = item.name;
+                    label.style.color = '#0F172A';
+                    panel.style.display = 'none';
+                });
+                list.appendChild(d);
+            });
+        }
+
+        function open() {
+            renderList('');
+            panel.style.display = 'block';
+            search.value = '';
+            setTimeout(() => search.focus(), 0);
+        }
+
+        function close() {
+            panel.style.display = 'none';
+        }
+
+        btn.addEventListener('click', () => panel.style.display === 'none' ? open() : close());
+        btn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+            if (e.key === 'Escape') close();
+        });
+
+        search.addEventListener('input', function () {
+            const q = search.value.trim();
+            renderList(search.value);
+            if (q && !CATALOG.find(i => i.name.toLowerCase() === q.toLowerCase())) {
+                createLbl.textContent = `Criar "${q}"`;
+                createBtn.style.display = 'flex';
+            } else {
+                createBtn.style.display = 'none';
+            }
+        });
+        search.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { close(); btn.focus(); return; }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const first = list.querySelector('[tabindex="0"]');
+                if (first) first.focus();
+                return;
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const name = search.value.trim();
+                if (!name) return;
+                const fd = new FormData();
+                fd.append('name', name);
+                fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                fetch(ADD_URL, {method: 'POST', body: fd})
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.id && data.name) {
+                            if (!CATALOG.find(i => i.id === data.id)) {
+                                CATALOG.push({id: data.id, name: data.name});
+                            }
+                            hid.value = data.id;
+                            label.textContent = data.name;
+                            label.style.color = '#0F172A';
+                            search.value = '';
+                            panel.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Erro ao criar item:', err));
+            }
+        });
+
+        createBtn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            const name = search.value.trim();
+            if (!name) return;
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+            fetch(ADD_URL, {method: 'POST', body: fd})
+                .then(r => r.json())
+                .then(data => {
+                    if (data.id && data.name) {
+                        if (!CATALOG.find(i => i.id === data.id)) {
+                            CATALOG.push({id: data.id, name: data.name});
+                        }
+                        hid.value = data.id;
+                        label.textContent = data.name;
+                        label.style.color = '#0F172A';
+                        search.value = '';
+                        panel.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Erro ao criar item:', err));
+        });
+
+        document.addEventListener('click', e => { if (!element.contains(e.target)) close(); });
+    };
 
     document.addEventListener('DOMContentLoaded', function () {
         // Valida e limpa antes de submeter

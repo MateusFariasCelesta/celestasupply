@@ -1023,6 +1023,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
 @push('scripts')
 <script>
+// Inicializar modal picker quando modal abre
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('addItemModal');
+    if (modal) {
+        let pickerInitialized = false;
+        modal.addEventListener('show.bs.modal', function() {
+            if (!pickerInitialized && window.wireModalPicker) {
+                const picker = modal.querySelector('.js-picker');
+                if (picker) {
+                    window.wireModalPicker(picker);
+                    pickerInitialized = true;
+                }
+            }
+        });
+    }
+});
+
 // ── Batch status staging ──────────────────────────────────────────────────────
 const BATCH_URL   = @js(route('requests.items.batchStatus', $supplyRequest));
 const BATCH_CSRF  = @js(csrf_token());
