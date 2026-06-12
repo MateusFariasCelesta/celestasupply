@@ -55,7 +55,7 @@
                         <span id="f-status-label">Todos</span>
                         <i class="bi bi-chevron-down" style="font-size:10px;opacity:.5"></i>
                     </button>
-                    <ul class="dropdown-menu w-100 py-1 shadow-sm" style="min-width:0;max-height:260px;overflow-y:auto">
+                    <ul class="dropdown-menu py-1 shadow-sm" style="min-width:280px;max-width:100vw;max-height:260px;overflow-y:auto">
                         @foreach(\App\Enums\RequestStatus::cases() as $s)
                         <li>
                             <label class="dropdown-item d-flex align-items-center gap-2 py-2" style="cursor:pointer;font-size:.875rem">
