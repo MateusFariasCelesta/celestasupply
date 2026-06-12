@@ -1,0 +1,311 @@
+/* ─────────────────────────────────────────────────────────────
+   ADVANCED ANIMATIONS
+   Phase 2: Enhancements
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CARD ENTRANCE WITH STAGGER ──────────────────────────── */
+
+@keyframes cardSlideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: cardSlideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+.card:nth-child(4) { animation-delay: 150ms; }
+.card:nth-child(5) { animation-delay: 200ms; }
+.card:nth-child(n+6) { animation-delay: 250ms; }
+
+/* ── BUTTON HOVER EFFECTS ──────────────────────────────── */
+
+.btn,
+button,
+[role="button"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover:not(:disabled),
+button:hover:not(:disabled),
+[role="button"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.btn:active:not(:disabled),
+button:active:not(:disabled),
+[role="button"]:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Button shimmer effect on hover */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+/* ── LOADING STATES & SKELETON SCREENS ──────────────────── */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: calc(200% + 0px) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-200) 0%,
+    var(--color-neutral-100) 50%,
+    var(--color-neutral-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-line {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ── MODAL ANIMATIONS ────────────────────────────────────── */
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop.show {
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+.modal.show .modal-content {
+  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── TOAST/ALERT ANIMATIONS ─────────────────────────────── */
+
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(360px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(360px);
+  }
+}
+
+.toast.showing {
+  animation: toastSlideInRight 0.2s ease-out;
+}
+
+.toast.hide {
+  animation: toastSlideOutRight 0.3s ease-in;
+}
+
+/* ── PAGE TRANSITIONS ────────────────────────────────────── */
+
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+body {
+  animation: fadeInPage 0.15s ease-out;
+}
+
+/* ── FORM FIELD ANIMATIONS ──────────────────────────────── */
+
+@keyframes formErrorSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-error {
+  animation: formErrorSlideDown 0.2s ease-out;
+}
+
+@keyframes inputFocus {
+  from {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
+  }
+  to {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  animation: inputFocus 0.2s ease-out;
+}
+
+/* ── TABLE ROW ANIMATIONS ────────────────────────────────── */
+
+@keyframes rowHighlight {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--color-primary-50);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tbody tr:hover {
+  background-color: var(--color-neutral-50);
+  transition: background-color 0.2s ease-out;
+}
+
+/* ── DROPDOWN MENU ANIMATIONS ────────────────────────────── */
+
+@keyframes dropdownSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu.show {
+  animation: dropdownSlideDown 0.15s ease-out;
+}
+
+/* ── ICON ANIMATIONS ────────────────────────────────────── */
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes iconRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon-bounce {
+  animation: iconBounce 0.6s ease-in-out;
+}
+
+.icon-spin {
+  animation: iconRotate 1s linear infinite;
+}
+
+/* ── LIST ITEM STAGGER ──────────────────────────────────── */
+
+.list-item {
+  opacity: 0;
+  animation: slideInUp 0.4s ease-out forwards;
+}
+
+.list-item:nth-child(1) { animation-delay: 0ms; }
+.list-item:nth-child(2) { animation-delay: 50ms; }
+.list-item:nth-child(3) { animation-delay: 100ms; }
+.list-item:nth-child(4) { animation-delay: 150ms; }
+.list-item:nth-child(5) { animation-delay: 200ms; }
+.list-item:nth-child(n+6) { animation-delay: 250ms; }
+
+/* ── ACCESSIBILITY ──────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
