@@ -69,40 +69,90 @@
             </div>
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Urgência</label>
-                <select id="f-urgency" class="form-select form-select-sm">
-                    <option value="">Todas</option>
-                    @foreach(\App\Enums\Urgency::cases() as $u)
-                    <option value="{{ $u->value }}">{{ $u->label() }}</option>
-                    @endforeach
-                </select>
+                <div class="dropdown">
+                    <button type="button" id="f-urgency-btn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
+                            style="border:1px solid #DEE2E6;background:#fff;font-size:.875rem;padding:.25rem .5rem;color:#212529;border-radius:.25rem">
+                        <span id="f-urgency-label">Todas</span>
+                        <i class="bi bi-chevron-down" style="font-size:10px;opacity:.5"></i>
+                    </button>
+                    <ul class="dropdown-menu py-1 shadow-sm" style="min-width:280px;max-width:100vw">
+                        <li><a class="dropdown-item" href="#" data-value="">Todas</a></li>
+                        @foreach(\App\Enums\Urgency::cases() as $u)
+                        <li><a class="dropdown-item f-urgency-opt" href="#" data-value="{{ $u->value }}">{{ $u->label() }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <input type="hidden" id="f-urgency" class="f-urgency-input">
             </div>
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Centro de Custo</label>
-                <select id="f-cc" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    @foreach($costCenters as $cc)
-                    <option value="{{ $cc->id }}">{{ $cc->name }}</option>
-                    @endforeach
-                </select>
+                <div class="dropdown">
+                    <button type="button" id="f-cc-btn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
+                            style="border:1px solid #DEE2E6;background:#fff;font-size:.875rem;padding:.25rem .5rem;color:#212529;border-radius:.25rem">
+                        <span id="f-cc-label">Todos</span>
+                        <i class="bi bi-chevron-down" style="font-size:10px;opacity:.5"></i>
+                    </button>
+                    <ul class="dropdown-menu py-1 shadow-sm" style="min-width:280px;max-width:100vw">
+                        <li><a class="dropdown-item" href="#" data-value="">Todos</a></li>
+                        @foreach($costCenters as $cc)
+                        <li><a class="dropdown-item f-cc-opt" href="#" data-value="{{ $cc->id }}">{{ $cc->name }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <input type="hidden" id="f-cc" class="f-cc-input">
             </div>
             @if($isBuyerOrAdmin)
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Solicitante</label>
-                <select id="f-user" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    @foreach($requesters as $u)
-                    <option value="{{ $u->id }}">{{ $u->name }}</option>
-                    @endforeach
-                </select>
+                <div class="dropdown">
+                    <button type="button" id="f-user-btn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
+                            style="border:1px solid #DEE2E6;background:#fff;font-size:.875rem;padding:.25rem .5rem;color:#212529;border-radius:.25rem">
+                        <span id="f-user-label">Todos</span>
+                        <i class="bi bi-chevron-down" style="font-size:10px;opacity:.5"></i>
+                    </button>
+                    <ul class="dropdown-menu py-1 shadow-sm" style="min-width:280px;max-width:100vw">
+                        <li><a class="dropdown-item" href="#" data-value="">Todos</a></li>
+                        @foreach($requesters as $u)
+                        <li><a class="dropdown-item f-user-opt" href="#" data-value="{{ $u->id }}">{{ $u->name }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <input type="hidden" id="f-user" class="f-user-input">
             </div>
             @endif
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">De</label>
-                <input type="date" id="f-from" class="form-control form-control-sm">
+                <div class="date-picker-wrapper" style="position:relative">
+                    <input type="text" id="f-from" class="form-control form-control-sm date-picker-input" placeholder="Selecione a data" style="font-size:.875rem">
+                    <div class="date-picker-menu" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid #DEE2E6;border-radius:.25rem;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:100;width:320px;padding:12px;margin-top:4px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                            <button type="button" class="date-picker-prev" style="background:none;border:none;cursor:pointer;padding:4px 8px"><i class="bi bi-chevron-left" style="font-size:16px"></i></button>
+                            <span class="date-picker-title" style="font-weight:600;font-size:14px">Janeiro 2026</span>
+                            <button type="button" class="date-picker-next" style="background:none;border:none;cursor:pointer;padding:4px 8px"><i class="bi bi-chevron-right" style="font-size:16px"></i></button>
+                        </div>
+                        <div class="date-picker-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+                    </div>
+                </div>
             </div>
             <div class="col-6 col-md">
                 <label class="form-label fw-semibold" style="font-size:12px">Até</label>
-                <input type="date" id="f-to" class="form-control form-control-sm">
+                <div class="date-picker-wrapper" style="position:relative">
+                    <input type="text" id="f-to" class="form-control form-control-sm date-picker-input" placeholder="Selecione a data" style="font-size:.875rem">
+                    <div class="date-picker-menu" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid #DEE2E6;border-radius:.25rem;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:100;width:320px;padding:12px;margin-top:4px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                            <button type="button" class="date-picker-prev" style="background:none;border:none;cursor:pointer;padding:4px 8px"><i class="bi bi-chevron-left" style="font-size:16px"></i></button>
+                            <span class="date-picker-title" style="font-weight:600;font-size:14px">Janeiro 2026</span>
+                            <button type="button" class="date-picker-next" style="background:none;border:none;cursor:pointer;padding:4px 8px"><i class="bi bi-chevron-right" style="font-size:16px"></i></button>
+                        </div>
+                        <div class="date-picker-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+                    </div>
+                </div>
             </div>
             <div class="col-auto">
                 <button type="button" id="f-clear" class="btn btn-sm btn-outline-secondary" style="display:none">
@@ -216,6 +266,166 @@
         from:    document.getElementById('f-from'),
         to:      document.getElementById('f-to'),
     };
+
+    // Handle urgency dropdown
+    var urgencyBtn = document.getElementById('f-urgency-btn');
+    if (urgencyBtn) {
+        urgencyBtn.parentElement.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const value = this.dataset.value;
+                const label = this.textContent.trim();
+                inputs.urgency.value = value;
+                document.getElementById('f-urgency-label').textContent = label;
+                filter();
+            });
+        });
+    }
+
+    // Handle cc dropdown
+    var ccBtn = document.getElementById('f-cc-btn');
+    if (ccBtn) {
+        ccBtn.parentElement.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const value = this.dataset.value;
+                const label = this.textContent.trim();
+                inputs.cc.value = value;
+                document.getElementById('f-cc-label').textContent = label;
+                filter();
+            });
+        });
+    }
+
+    // Handle user dropdown
+    var userBtn = document.getElementById('f-user-btn');
+    if (userBtn) {
+        userBtn.parentElement.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const value = this.dataset.value;
+                const label = this.textContent.trim();
+                inputs.user.value = value;
+                document.getElementById('f-user-label').textContent = label;
+                filter();
+            });
+        });
+    }
+
+    // Handle date input formatting (DD/MM/YYYY to YYYY-MM-DD)
+    inputs.from?.addEventListener('input', function () {
+        let val = this.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length >= 2) val = val.slice(0, 2) + '/' + val.slice(2);
+        if (val.length >= 5) val = val.slice(0, 5) + '/' + val.slice(5);
+        this.value = val;
+    });
+
+    inputs.from?.addEventListener('blur', function () {
+        if (this.value) {
+            const [day, month, year] = this.value.split('/');
+            if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+                this.value = year + '-' + month + '-' + day;
+                filter();
+            } else {
+                this.value = '';
+                filter();
+            }
+        }
+    });
+
+    inputs.to?.addEventListener('input', function () {
+        let val = this.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length >= 2) val = val.slice(0, 2) + '/' + val.slice(2);
+        if (val.length >= 5) val = val.slice(0, 5) + '/' + val.slice(5);
+        this.value = val;
+    });
+
+    inputs.to?.addEventListener('blur', function () {
+        if (this.value) {
+            const [day, month, year] = this.value.split('/');
+            if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+                this.value = year + '-' + month + '-' + day;
+                filter();
+            } else {
+                this.value = '';
+                filter();
+            }
+        }
+    });
+
+    // Date picker calendar
+    function initDatePicker(inputEl) {
+        const wrapper = inputEl.closest('.date-picker-wrapper');
+        const menu = wrapper.querySelector('.date-picker-menu');
+        const grid = menu.querySelector('.date-picker-grid');
+        const title = menu.querySelector('.date-picker-title');
+        const prevBtn = menu.querySelector('.date-picker-prev');
+        const nextBtn = menu.querySelector('.date-picker-next');
+
+        let currentDate = new Date();
+
+        const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+        function renderCalendar() {
+            grid.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            title.textContent = months[month] + ' ' + year;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += '<div style="text-align:center;padding:4px;color:#ccc">—</div>';
+            }
+
+            // Days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayBtn = document.createElement('button');
+                dayBtn.type = 'button';
+                dayBtn.textContent = day;
+                dayBtn.style.cssText = 'background:none;border:1px solid #e0e0e0;border-radius:4px;padding:6px;cursor:pointer;font-size:12px';
+                dayBtn.addEventListener('mouseenter', function() { this.style.background = '#f0f0f0'; });
+                dayBtn.addEventListener('mouseleave', function() { this.style.background = 'none'; });
+                dayBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+                    inputEl.value = dateStr;
+                    menu.style.display = 'none';
+                    inputEl.dispatchEvent(new Event('change'));
+                    filter();
+                });
+                grid.appendChild(dayBtn);
+            }
+        }
+
+        inputEl.addEventListener('focus', function() {
+            menu.style.display = 'block';
+            renderCalendar();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!wrapper.contains(e.target)) menu.style.display = 'none';
+        });
+
+        prevBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
+
+    document.querySelectorAll('.date-picker-input').forEach(initDatePicker);
 
     function getSelectedStatuses() {
         return Array.from(document.querySelectorAll('.f-status-cb:checked')).map(cb => cb.value);

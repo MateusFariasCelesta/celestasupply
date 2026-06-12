@@ -12,8 +12,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="{{ asset('css/design-system.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/animations-advanced.css') }}" rel="stylesheet">
 
     <style>
         :root {
@@ -853,17 +851,5 @@
     });
 </script>
 @endif
-
-<!-- Mobile Bottom Navigation -->
-<x-bottom-nav />
-
-<style>
-    /* Add padding-bottom to prevent content being hidden behind bottom nav on mobile */
-    @media (max-width: 767px) {
-        body {
-            padding-bottom: 80px; /* 60px nav + 20px extra for safe area */
-        }
-    }
-</style>
 </body>
 </html>
