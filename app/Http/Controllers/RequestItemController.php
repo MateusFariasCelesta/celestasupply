@@ -79,10 +79,6 @@ class RequestItemController extends Controller
             'previous_status' => $keepReason ? $supplyRequestItem->previous_status : null,
         ]);
 
-        if ($to === ItemStatus::AwaitingDelivery) {
-            $this->notifications->scheduleAwaitingDelivery($supplyRequest);
-        }
-
         $this->autoAdvanceRequest($supplyRequest);
 
         return back()->with('success', "Item alterado para: {$to->label()}.");
