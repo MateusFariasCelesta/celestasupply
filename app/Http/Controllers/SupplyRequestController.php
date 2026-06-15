@@ -112,7 +112,9 @@ class SupplyRequestController extends Controller
             ? \App\Models\Supplier::where('isActive', true)->orderBy('name')->get(['id', 'name'])
             : collect();
 
-        return view('supply-requests.show', compact('supplyRequest', 'suppliers'));
+        $items = Item::where('isActive', true)->orderBy('name')->get();
+
+        return view('supply-requests.show', compact('supplyRequest', 'suppliers', 'items'));
     }
 
     public function edit(SupplyRequest $supplyRequest): View
@@ -242,5 +244,55 @@ class SupplyRequestController extends Controller
 
         return redirect()->route('requests.show', $supplyRequest)
             ->with('success', 'Cancelamento solicitado.');
+    }
+
+    public function saveItems(\Illuminate\Http\Request $request, SupplyRequest $supplyRequest): RedirectResponse
+    {
+        $this->authorize('saveItems', $supplyRequest);
+
+        $data = $request->validate([
+            'items'            => ['required', 'array'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.unit'     => ['nullable', 'string', 'max:50'],
+            'items.*.notes'    => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $allowedIds = $supplyRequest->items()->pluck('id')->all();
+
+        foreach ($data['items'] as $itemId => $row) {
+            if (!in_array((int) $itemId, $allowedIds)) {
+                continue;
+            }
+            \App\Models\SupplyRequestItem::where('id', $itemId)->update([
+                'quantity' => $row['quantity'],
+                'unit'     => $row['unit'] ?? null,
+                'notes'    => $row['notes'] ?? null,
+            ]);
+        }
+
+        return redirect()->route('requests.show', $supplyRequest)
+            ->with('success', 'Itens salvos com sucesso.');
+    }
+
+    public function addItem(SupplyRequest $supplyRequest): RedirectResponse
+    {
+        $this->authorize('addItem', $supplyRequest);
+
+        $data = request()->validate([
+            'item_id' => ['required', 'exists:items,id'],
+            'quantity' => ['required', 'numeric', 'min:0.001'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $supplyRequest->items()->create([
+            'item_id' => $data['item_id'],
+            'quantity' => $data['quantity'],
+            'unit' => $data['unit'] ?? null,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        return redirect()->route('requests.show', $supplyRequest)
+            ->with('success', 'Item adicionado com sucesso.');
     }
 }

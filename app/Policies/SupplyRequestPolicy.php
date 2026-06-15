@@ -86,4 +86,28 @@ class SupplyRequestPolicy
     {
         return $user->isAdmin();
     }
+
+    public function saveItems(User $user, SupplyRequest $sr): bool
+    {
+        $blocked = [RequestStatus::Cancelled, RequestStatus::Completed];
+        if (in_array($sr->status, $blocked)) {
+            return false;
+        }
+        if ($sr->user_id === $user->id) {
+            return true;
+        }
+        return $user->isBuyerOrAdmin();
+    }
+
+    public function addItem(User $user, SupplyRequest $sr): bool
+    {
+        $blocked = [RequestStatus::Cancelled, RequestStatus::Completed];
+        if (in_array($sr->status, $blocked)) {
+            return false;
+        }
+        if ($sr->user_id === $user->id) {
+            return true;
+        }
+        return $user->isBuyerOrAdmin();
+    }
 }

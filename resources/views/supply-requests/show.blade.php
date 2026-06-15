@@ -75,7 +75,20 @@
 
 {{-- Items --}}
 <div class="cs-card mb-4">
-    <h6 class="fw-semibold mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-semibold mb-0" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
+        @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="bi bi-plus"></i> Adicionar Item
+        </button>
+        @endif
+    </div>
+
+    @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+    <form method="POST" action="{{ route('requests.saveItems', $supplyRequest) }}">
+        @csrf
+    @endif
+
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead class="table-light">
@@ -118,8 +131,24 @@
                         @endif
                     </td>
                     <td style="font-size:13px;color:#374151">
-                        {{ $item->formattedQuantity() }}
-                        @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
+                        @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+                        <div class="d-flex align-items-center gap-1">
+                            <input type="number" step="0.001" min="0.001" required
+                                   name="items[{{ $item->id }}][quantity]"
+                                   value="{{ $item->quantity }}"
+                                   class="form-control form-control-sm" style="width:80px;font-size:12px">
+                            <input type="text" maxlength="20" placeholder="un."
+                                   name="items[{{ $item->id }}][unit]"
+                                   value="{{ $item->unit }}"
+                                   class="form-control form-control-sm" style="width:55px;font-size:12px">
+                            <input type="hidden"
+                                   name="items[{{ $item->id }}][notes]"
+                                   value="{{ $item->notes }}">
+                        </div>
+                        @else
+                            {{ $item->formattedQuantity() }}
+                            @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
+                        @endif
                     </td>
                     <td style="font-size:13px">
                         @if($item->order_number)
@@ -145,6 +174,16 @@
             </tbody>
         </table>
     </div>
+
+    @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+    <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Salvar Itens
+        </button>
+    </div>
+    </form>
+    @endif
+
 </div>
 
 @push('modals')
@@ -907,10 +946,100 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </div>
 </div>
+
+{{-- Modal para adicionar novo item --}}
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ route('requests.addItem', $supplyRequest) }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addItemModalLabel">Adicionar Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Item <span class="text-danger">*</span>
+                        </label>
+                        @include('supply-requests._item-picker', ['name' => 'item_id', 'label' => 'Selecionar item…', 'pickerId' => 'modal-item-picker'])
+                        @error('item_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label for="quantity" class="form-label fw-semibold">
+                                Quantidade <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" id="quantity" name="quantity"
+                                   class="form-control form-control-sm @error('quantity') is-invalid @enderror"
+                                   step="0.001" min="0.001" required
+                                   placeholder="0,000"
+                                   value="{{ old('quantity') }}">
+                            @error('quantity')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-5">
+                            <label for="unit" class="form-label fw-semibold">
+                                Unidade
+                            </label>
+                            <input type="text" id="unit" name="unit"
+                                   class="form-control form-control-sm @error('unit') is-invalid @enderror"
+                                   maxlength="20" placeholder="un."
+                                   value="{{ old('unit') }}">
+                            @error('unit')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label fw-semibold">
+                            Observações
+                        </label>
+                        <textarea id="notes" name="notes"
+                                  class="form-control form-control-sm @error('notes') is-invalid @enderror"
+                                  rows="3" maxlength="500" placeholder="Opcional…">{{ old('notes') }}</textarea>
+                        @error('notes')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar Item</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endpush
+
+@include('supply-requests._request-form-script')
 
 @push('scripts')
 <script>
+// Inicializar modal picker quando modal abre
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('addItemModal');
+    if (modal) {
+        let pickerInitialized = false;
+        modal.addEventListener('show.bs.modal', function() {
+            if (!pickerInitialized && window.wireModalPicker) {
+                const picker = modal.querySelector('.js-picker');
+                if (picker) {
+                    window.wireModalPicker(picker);
+                    pickerInitialized = true;
+                }
+            }
+        });
+    }
+});
+
 // ── Batch status staging ──────────────────────────────────────────────────────
 const BATCH_URL   = @js(route('requests.items.batchStatus', $supplyRequest));
 const BATCH_CSRF  = @js(csrf_token());

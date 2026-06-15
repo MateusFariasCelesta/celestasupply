@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
         ->parameters(['requests' => 'supplyRequest']);
     Route::post('requests/{supplyRequest}/submit', [SupplyRequestController::class, 'submit'])->name('requests.submit');
     Route::post('requests/{supplyRequest}/cancel-request', [SupplyRequestController::class, 'cancelRequest'])->name('requests.cancelRequest');
+    Route::post('requests/{supplyRequest}/save-items', [SupplyRequestController::class, 'saveItems'])->name('requests.saveItems');
+    Route::post('requests/{supplyRequest}/add-item', [SupplyRequestController::class, 'addItem'])->name('requests.addItem');
     // Item actions (buyer/admin)
     Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/status', [RequestItemController::class, 'updateStatus'])->name('requests.items.status');
     Route::post('requests/{supplyRequest}/items/batch-status', [RequestItemController::class, 'batchStatus'])->name('requests.items.batchStatus');
