@@ -357,12 +357,16 @@
 
     // Date picker calendar
     function initDatePicker(inputEl) {
+        if (!inputEl) return;
         const wrapper = inputEl.closest('.date-picker-wrapper');
+        if (!wrapper) return;
         const menu = wrapper.querySelector('.date-picker-menu');
+        if (!menu) return;
         const grid = menu.querySelector('.date-picker-grid');
         const title = menu.querySelector('.date-picker-title');
         const prevBtn = menu.querySelector('.date-picker-prev');
         const nextBtn = menu.querySelector('.date-picker-next');
+        if (!grid || !title || !prevBtn || !nextBtn) return;
 
         let currentDate = new Date();
 
@@ -425,7 +429,7 @@
         });
     }
 
-    document.querySelectorAll('.date-picker-input').forEach(initDatePicker);
+    document.querySelectorAll('.date-picker-input')?.forEach?.(initDatePicker);
 
     function getSelectedStatuses() {
         return Array.from(document.querySelectorAll('.f-status-cb:checked')).map(cb => cb.value);
