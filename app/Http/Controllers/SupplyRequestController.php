@@ -104,7 +104,6 @@ class SupplyRequestController extends Controller
             'items.attachment.uploadedBy',
             'items.deliveries.registeredBy',
             'attachments.uploadedBy',
-            'externalOrders.registeredBy',
             'statusHistory.changedBy',
         ]);
 

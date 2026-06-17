@@ -58,6 +58,26 @@
             <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Data</div>
             <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->created_at->format('d/m/Y H:i') }}</div>
         </div>
+        @php
+            $pcs = $supplyRequest->items
+                ->pluck('order_number')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                ->values()
+                ->all();
+        @endphp
+        @if(count($pcs) > 0)
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Pedidos (PC)</div>
+            <div style="font-weight:500;color:#1E293B;display:flex;gap:6px;flex-wrap:wrap">
+                @foreach($pcs as $pc)
+                <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">{{ $pc }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endif
         @if($supplyRequest->notes)
         <div>
             <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Observações</div>
@@ -477,118 +497,6 @@
 @endforeach
 @endpush
 
-{{-- External Orders --}}
-<div class="cs-card mt-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h6 class="fw-semibold mb-0" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">
-            <i class="bi bi-file-earmark-text me-1"></i>Pedidos
-        </h6>
-        @can('create', [\App\Models\ExternalOrder::class, $supplyRequest])
-        <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:12px"
-                data-bs-toggle="collapse" data-bs-target="#addExternalOrderForm">
-            <i class="bi bi-plus"></i> Adicionar
-        </button>
-        @endcan
-    </div>
-
-    @can('create', [\App\Models\ExternalOrder::class, $supplyRequest])
-    <div class="collapse mb-3" id="addExternalOrderForm">
-        <form method="POST" action="{{ route('requests.external-orders.store', $supplyRequest) }}"
-              enctype="multipart/form-data"
-              class="row g-2 align-items-end p-3 rounded-2" style="background:#F8FAFC;border:1px solid #E2E9F4">
-            @csrf
-            <div class="col-md-2">
-                <label class="form-label" style="font-size:12px">Nº Pedido</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1;font-size:12px">0000</span>
-                    <input type="number" name="order_number" class="form-control form-control-sm"
-                           min="1" max="9999" placeholder="1" style="font-family:monospace">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" style="font-size:12px">Observações</label>
-                <input type="text" name="notes" class="form-control form-control-sm"
-                       maxlength="500" placeholder="Opcional">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" style="font-size:12px">
-                    Arquivo <span class="text-danger">*</span>
-                    <span class="text-muted fw-normal">(PDF, JPG ou PNG · máx. 10 MB)</span>
-                </label>
-                <input type="file" name="file" class="form-control form-control-sm"
-                       accept=".pdf,.jpg,.jpeg,.png" required>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Salvar</button>
-            </div>
-        </form>
-    </div>
-    @endcan
-
-    @if($supplyRequest->externalOrders->isEmpty())
-    <p class="text-muted mb-0" style="font-size:13px">Nenhum pedido registrado.</p>
-    @else
-    <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Nº Pedido</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Observações</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Arquivo</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Registrado por</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Data</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($supplyRequest->externalOrders as $eo)
-                <tr>
-                    <td style="font-size:13px;font-family:monospace;font-weight:600;color:#0369A1">
-                        @if($eo->order_number)
-                            {{ str_pad((int) $eo->order_number, 4, '0', STR_PAD_LEFT) }}
-                        @else
-                            <span style="color:#CBD5E1">—</span>
-                        @endif
-                    </td>
-                    <td style="font-size:13px;color:#64748B">{{ $eo->notes ?? '—' }}</td>
-                    <td style="font-size:13px">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="color:#374151">{{ Str::limit($eo->original_name, 22) }}</span>
-                            <a href="{{ route('requests.external-orders.view', [$supplyRequest, $eo]) }}"
-                               target="_blank"
-                               class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 7px">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
-                            <a href="{{ route('requests.external-orders.download', [$supplyRequest, $eo]) }}"
-                               class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 7px">
-                                <i class="bi bi-download"></i>
-                            </a>
-                        </div>
-                    </td>
-                    <td style="font-size:13px;color:#64748B">{{ $eo->registeredBy->name }}</td>
-                    <td style="font-size:12px;color:#94A3B8;white-space:nowrap">
-                        {{ $eo->created_at->format('d/m/Y') }}
-                    </td>
-                    <td>
-                        @can('delete', $eo)
-                        <form method="POST" action="{{ route('requests.external-orders.destroy', [$supplyRequest, $eo]) }}"
-                              onsubmit="return confirm('Remover este pedido?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    style="font-size:11px;padding:2px 6px">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                        @endcan
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endif
-</div>
-
 {{-- Request Attachments --}}
 <div class="cs-card mt-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -609,18 +517,42 @@
               enctype="multipart/form-data"
               class="row g-2 align-items-end p-3 rounded-2" style="background:#F8FAFC;border:1px solid #E2E9F4">
             @csrf
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label" style="font-size:12px">
                     Tipo <span class="text-danger">*</span>
                 </label>
-                <select name="type" class="form-select form-select-sm" required>
+                <select name="type" class="form-select form-select-sm" id="attachmentType" required>
                     <option value="" disabled selected>Selecionar…</option>
                     @foreach(\App\Enums\AttachmentType::cases() as $t)
                     <option value="{{ $t->value }}">{{ $t->label() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-2" id="poField" style="display:none">
+                <label class="form-label" style="font-size:12px">Pedido de Compra</label>
+                @php
+                    $pcs = $supplyRequest->items
+                        ->pluck('order_number')
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                        ->values();
+                @endphp
+                <select name="order_number" class="form-select form-select-sm">
+                    <option value="">Nenhum</option>
+                    @foreach($pcs as $pc)
+                    <option value="{{ $pc }}">{{ $pc }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <script>
+            document.getElementById('attachmentType').addEventListener('change', function() {
+                const poField = document.getElementById('poField');
+                poField.style.display = this.value === 'purchase_order' ? '' : 'none';
+            });
+            </script>
+            <div class="col-md-4">
                 <label class="form-label" style="font-size:12px">
                     Arquivo <span class="text-danger">*</span>
                     <span class="text-muted fw-normal">(PDF, JPG ou PNG · máx. 10 MB)</span>
@@ -643,6 +575,7 @@
             <thead class="table-light">
                 <tr>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tipo</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">PC</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Arquivo</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tamanho</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Enviado por</th>
@@ -657,6 +590,9 @@
                         <span class="cs-badge cs-badge-inProgress" style="font-size:10px">
                             {{ $att->type->label() }}
                         </span>
+                    </td>
+                    <td style="font-size:12px;font-family:monospace;font-weight:600;color:#0369A1">
+                        {{ $att->order_number ?? '—' }}
                     </td>
                     <td style="font-size:13px">
                         <div class="d-flex align-items-center gap-2">

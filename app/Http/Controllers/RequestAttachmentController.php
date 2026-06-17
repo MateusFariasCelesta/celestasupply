@@ -19,8 +19,9 @@ class RequestAttachmentController extends Controller
         $this->authorize('create', [RequestAttachment::class, $supplyRequest]);
 
         $data = $request->validate([
-            'type' => ['required', 'in:quote,invoice,receipt,other'],
+            'type' => ['required', 'in:quote,invoice,receipt,purchase_order,other'],
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'order_number' => ['nullable', 'string'],
         ]);
 
         $fileData = $this->fileUpload->store(
@@ -30,6 +31,7 @@ class RequestAttachmentController extends Controller
 
         $supplyRequest->attachments()->create([
             'type'        => $data['type'],
+            'order_number' => $data['order_number'] ?? null,
             'uploaded_by' => auth()->id(),
             ...$fileData,
         ]);

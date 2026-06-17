@@ -164,10 +164,21 @@
             <th>Status</th>
             <th>Data</th>
             <th class="text-center">Itens</th>
+            <th>Pedidos (PC)</th>
         </tr>
     </thead>
     <tbody>
         @forelse($supplyRequests as $sr)
+        @php
+            $pcs = $sr->items
+                ->pluck('order_number')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                ->values()
+                ->implode(', ');
+        @endphp
         <tr>
             <td><strong>{{ $sr->code }}</strong></td>
             <td>{{ $sr->title }}</td>
@@ -177,10 +188,11 @@
             <td><span class="badge badge-{{ $sr->status->value }}">{{ $sr->status->label() }}</span></td>
             <td>{{ $sr->created_at->format('d/m/Y') }}</td>
             <td class="text-center">{{ $sr->items->count() }}</td>
+            <td>{{ $pcs }}</td>
         </tr>
         @empty
         <tr>
-            <td colspan="8" class="text-center" style="padding:20px;color:#9CA3AF">
+            <td colspan="9" class="text-center" style="padding:20px;color:#9CA3AF">
                 Nenhuma solicitação encontrada.
             </td>
         </tr>

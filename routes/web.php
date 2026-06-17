@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\CostCenterController as AdminCostCenterController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExternalOrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ItemAttachmentController;
 use App\Http\Controllers\ItemController;
@@ -60,12 +59,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('requests/{supplyRequest}/attachments/{requestAttachment}', [RequestAttachmentController::class, 'destroy'])->name('requests.attachments.destroy');
     Route::get('requests/{supplyRequest}/attachments/{requestAttachment}/download', [RequestAttachmentController::class, 'download'])->name('requests.attachments.download');
     Route::get('requests/{supplyRequest}/attachments/{requestAttachment}/view', [RequestAttachmentController::class, 'view'])->name('requests.attachments.view');
-
-    // External orders
-    Route::post('requests/{supplyRequest}/external-orders', [ExternalOrderController::class, 'store'])->name('requests.external-orders.store');
-    Route::delete('requests/{supplyRequest}/external-orders/{externalOrder}', [ExternalOrderController::class, 'destroy'])->name('requests.external-orders.destroy');
-    Route::get('requests/{supplyRequest}/external-orders/{externalOrder}/download', [ExternalOrderController::class, 'download'])->name('requests.external-orders.download');
-    Route::get('requests/{supplyRequest}/external-orders/{externalOrder}/view', [ExternalOrderController::class, 'view'])->name('requests.external-orders.view');
 
     // Items
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);

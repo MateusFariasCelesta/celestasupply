@@ -17,6 +17,7 @@ class RequestAttachment extends Model
         'mime_type',
         'size_kb',
         'uploaded_by',
+        'order_number',
     ];
 
     protected $casts = [
