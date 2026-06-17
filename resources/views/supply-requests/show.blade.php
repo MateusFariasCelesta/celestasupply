@@ -105,7 +105,7 @@
     </div>
 
     @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-    <form method="POST" action="{{ route('requests.saveItems', $supplyRequest) }}">
+    <form id="items-form" method="POST" action="{{ route('requests.saveItems', $supplyRequest) }}">
         @csrf
     @endif
 
@@ -196,11 +196,6 @@
     </div>
 
     @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-    <div class="d-flex justify-content-end mt-3">
-        <button type="submit" class="btn btn-sm btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Salvar Itens
-        </button>
-    </div>
     </form>
     @endif
 
@@ -754,12 +749,16 @@
 </div>
 @endcan
 
-{{-- Barra de confirmação de status em lote --}}
+@endsection
+
+@push('modals')
+{{-- Barra de confirmação de status em lote (fora do container) --}}
 <div id="batch-bar" class="d-none"
-     style="position:fixed;bottom:0;left:0;right:0;z-index:1040;
+     style="position:fixed;bottom:0;left:0;right:0;top:auto;z-index:9999;
             background:#1E293B;padding:12px 24px;
             display:flex;align-items:center;justify-content:space-between;gap:12px;
-            box-shadow:0 -4px 20px rgba(0,0,0,.25)">
+            box-shadow:0 -4px 20px rgba(0,0,0,.25);
+            width:100%;max-width:100vw;pointer-events:auto">
     <span style="color:#fff;font-size:14px;font-weight:500">
         <i class="bi bi-clock-history me-2" style="color:#60A5FA"></i>
         <span id="batch-count">0</span> item(ns) com status pendente
@@ -769,13 +768,12 @@
                 style="color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2)">
             Descartar
         </button>
-        <button id="btn-confirm-batch" class="btn btn-sm btn-primary" onclick="confirmBatch()">
-            <i class="bi bi-check me-1"></i>Confirmar alterações
+        <button id="btn-confirm-batch" class="btn btn-sm btn-primary" onclick="confirmAllChanges()">
+            <i class="bi bi-check me-1"></i>Confirmar Alterações
         </button>
     </div>
 </div>
-
-@endsection
+@endpush
 
 
 @can('cancelDirect', $supplyRequest)
@@ -981,7 +979,25 @@ const BATCH_URL   = @js(route('requests.items.batchStatus', $supplyRequest));
 const BATCH_CSRF  = @js(csrf_token());
 
 let staged    = {};          // { [itemId]: { order_number? } }
+let modified  = {};          // { [itemId]: true } — items com mudanças em quantity/unit
 let batchItemId = null;      // item aguardando número PC no modal
+
+// Rastrear mudanças em quantity/unit
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name^="items["][name$="][quantity]"], input[name^="items["][name$="][unit]"]').forEach(input => {
+        const itemId = input.name.match(/items\[(\d+)\]/)[1];
+        const originalValue = input.value;
+
+        input.addEventListener('change', function() {
+            if (this.value !== originalValue) {
+                modified[itemId] = true;
+            } else {
+                delete modified[itemId];
+            }
+            updateBar();
+        });
+    });
+});
 
 function stageAdvance(id, isQuoting, itemName, nextLabel) {
     if (isQuoting) {
@@ -1022,12 +1038,99 @@ function unstage(id) {
 
 function clearAllStaged() {
     Object.keys(staged).forEach(id => unstage(parseInt(id)));
+    modified = {};
+    updateBar();
 }
 
 function updateBar() {
-    const count = Object.keys(staged).length;
-    document.getElementById('batch-count').textContent = count;
-    document.getElementById('batch-bar').classList.toggle('d-none', count === 0);
+    const stagedCount = Object.keys(staged).length;
+    const modifiedCount = Object.keys(modified).length;
+    const totalCount = stagedCount + modifiedCount;
+
+    document.getElementById('batch-count').textContent = totalCount;
+    document.getElementById('batch-bar').classList.toggle('d-none', totalCount === 0);
+}
+
+async function confirmAllChanges() {
+    const itemsForm = document.getElementById('items-form');
+    const btn = document.getElementById('btn-confirm-batch');
+
+    if (!itemsForm || !btn) {
+        console.error('Form or button not found');
+        return;
+    }
+
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando…';
+
+    try {
+        // PASSO 1: Coleta dados do formulário como JSON
+        const formData = new FormData(itemsForm);
+        const items = {};
+        for (const [key, value] of formData) {
+            const match = key.match(/items\[(\d+)\]\[(\w+)\]/);
+            if (match) {
+                const [, id, field] = match;
+                items[id] = items[id] || {};
+                items[id][field] = value;
+            }
+        }
+
+        // PASSO 2: Salva os items (quantidade, unidade, notas)
+        const saveResp = await fetch(itemsForm.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ items }),
+        });
+
+        if (!saveResp.ok) {
+            alert('Erro ao salvar itens. Tente novamente.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            return;
+        }
+
+        // PASSO 3: Se há items staged, avança status
+        const hasStaged = Object.keys(staged).length > 0;
+        if (hasStaged) {
+            const stagedItems = Object.entries(staged).map(([id, data]) => ({
+                id: parseInt(id),
+                ...data
+            }));
+
+            const batchResp = await fetch(BATCH_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': BATCH_CSRF,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ items: stagedItems }),
+            });
+
+            if (!batchResp.ok) {
+                const json = await batchResp.json().catch(() => ({}));
+                alert(json.message || 'Erro ao confirmar status. Tente novamente.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                return;
+            }
+        }
+
+        // Sucesso: recarrega página
+        window.location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert('Erro de conexão. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
 
 async function confirmBatch() {

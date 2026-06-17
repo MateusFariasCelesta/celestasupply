@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\FileUploadService;
 use App\Services\RequestStatusService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class SupplyRequestController extends Controller
@@ -245,7 +246,7 @@ class SupplyRequestController extends Controller
             ->with('success', 'Cancelamento solicitado.');
     }
 
-    public function saveItems(\Illuminate\Http\Request $request, SupplyRequest $supplyRequest): RedirectResponse
+    public function saveItems(\Illuminate\Http\Request $request, SupplyRequest $supplyRequest): RedirectResponse|JsonResponse
     {
         $this->authorize('saveItems', $supplyRequest);
 
@@ -267,6 +268,10 @@ class SupplyRequestController extends Controller
                 'unit'     => $row['unit'] ?? null,
                 'notes'    => $row['notes'] ?? null,
             ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true]);
         }
 
         return redirect()->route('requests.show', $supplyRequest)
