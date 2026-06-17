@@ -267,6 +267,82 @@
         to:      document.getElementById('f-to'),
     };
 
+    // URL query params management
+    function getFilterParams() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            q: params.get('q') || '',
+            urgency: params.get('urgency') || '',
+            cc: params.get('cost_center_id') || '',
+            user: params.get('user_id') || '',
+            from: params.get('from') || '',
+            to: params.get('to') || '',
+            status: (params.getAll('status[]') || [])
+        };
+    }
+
+    function updateUrlParams() {
+        const params = new URLSearchParams();
+        if (inputs.q.value) params.append('q', inputs.q.value);
+        if (inputs.urgency.value) params.append('urgency', inputs.urgency.value);
+        if (inputs.cc.value) params.append('cost_center_id', inputs.cc.value);
+        if (inputs.user.value) params.append('user_id', inputs.user.value);
+        if (inputs.from.value) params.append('from', inputs.from.value);
+        if (inputs.to.value) params.append('to', inputs.to.value);
+        document.querySelectorAll('.f-status-cb:checked').forEach(function(cb) {
+            params.append('status[]', cb.value);
+        });
+
+        const queryString = params.toString();
+        window.history.replaceState(null, '', queryString ? '?' + queryString : window.location.pathname);
+    }
+
+    // Restore filters from URL params on page load
+    function restoreFiltersFromUrl() {
+        const params = getFilterParams();
+        if (params.q) inputs.q.value = params.q;
+
+        if (params.urgency) {
+            inputs.urgency.value = params.urgency;
+            const urgencyLabel = document.querySelector('.f-urgency-opt[data-value="' + params.urgency + '"]');
+            if (urgencyLabel) {
+                document.getElementById('f-urgency-label').textContent = urgencyLabel.textContent.trim();
+            }
+        }
+
+        if (params.cc) {
+            inputs.cc.value = params.cc;
+            const ccLabel = document.querySelector('.f-cc-opt[data-value="' + params.cc + '"]');
+            if (ccLabel) {
+                document.getElementById('f-cc-label').textContent = ccLabel.textContent.trim();
+            }
+        }
+
+        if (params.user) {
+            inputs.user.value = params.user;
+            const userLabel = document.querySelector('.f-user-opt[data-value="' + params.user + '"]');
+            if (userLabel) {
+                document.getElementById('f-user-label').textContent = userLabel.textContent.trim();
+            }
+        }
+
+        if (params.from) inputs.from.value = params.from;
+        if (params.to) inputs.to.value = params.to;
+
+        // Restore status checkboxes
+        if (params.status.length) {
+            params.status.forEach(function(status) {
+                const cb = document.querySelector('.f-status-cb[value="' + status + '"]');
+                if (cb) cb.checked = true;
+            });
+        }
+    }
+
+    // Restore on page load
+    restoreFiltersFromUrl();
+    updateStatusLabel();
+    filter();
+
     // Handle urgency dropdown
     var urgencyBtn = document.getElementById('f-urgency-btn');
     if (urgencyBtn) {
@@ -475,6 +551,7 @@
         });
 
         noRes.style.display = (rows.length > 0 && visible === 0) ? 'block' : 'none';
+        updateUrlParams();
     }
 
     // Status: checkboxes no dropdown
