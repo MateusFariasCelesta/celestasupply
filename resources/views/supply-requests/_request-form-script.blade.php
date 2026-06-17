@@ -434,6 +434,9 @@ window.ADD_URL  = '{{ route('items.inline') }}';
             });
         });
 
+        const itemsTbody = document.getElementById('items-tbody');
+        if (!itemsTbody) return; // Script só executa em páginas com tabela de items
+
         const btnAddRow = document.getElementById('btn-add-row');
         if (btnAddRow) {
             btnAddRow.addEventListener('click', () => addRow());
