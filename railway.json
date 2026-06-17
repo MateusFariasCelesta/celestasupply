@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "startCommand": "railway/init-app.sh"
+  },
+  "volumes": {
+    "storage": "/app/storage"
+  }
+}
