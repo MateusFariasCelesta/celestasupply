@@ -88,7 +88,7 @@ class ReportController extends Controller
 
     private function buildQuery(Request $request)
     {
-        return SupplyRequest::with(['costCenter', 'user', 'items'])
+        return SupplyRequest::with(['costCenter', 'user', 'items.item'])
             ->where('status', '!=', RequestStatus::Draft->value)
             ->when($request->filled('q'), function ($q) use ($request) {
                 $term = $request->q;

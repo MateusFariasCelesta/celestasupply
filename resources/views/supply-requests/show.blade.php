@@ -58,6 +58,26 @@
             <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Data</div>
             <div style="font-weight:500;color:#1E293B">{{ $supplyRequest->created_at->format('d/m/Y H:i') }}</div>
         </div>
+        @php
+            $pcs = $supplyRequest->items
+                ->pluck('order_number')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                ->values()
+                ->all();
+        @endphp
+        @if(count($pcs) > 0)
+        <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Pedidos (PC)</div>
+            <div style="font-weight:500;color:#1E293B;display:flex;gap:6px;flex-wrap:wrap">
+                @foreach($pcs as $pc)
+                <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">{{ $pc }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endif
         @if($supplyRequest->notes)
         <div>
             <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Observações</div>
@@ -85,7 +105,7 @@
     </div>
 
     @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-    <form method="POST" action="{{ route('requests.saveItems', $supplyRequest) }}">
+    <form id="items-form" method="POST" action="{{ route('requests.saveItems', $supplyRequest) }}">
         @csrf
     @endif
 
@@ -176,11 +196,6 @@
     </div>
 
     @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-    <div class="d-flex justify-content-end mt-3">
-        <button type="submit" class="btn btn-sm btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Salvar Itens
-        </button>
-    </div>
     </form>
     @endif
 
@@ -477,118 +492,6 @@
 @endforeach
 @endpush
 
-{{-- External Orders --}}
-<div class="cs-card mt-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h6 class="fw-semibold mb-0" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">
-            <i class="bi bi-file-earmark-text me-1"></i>Pedidos
-        </h6>
-        @can('create', [\App\Models\ExternalOrder::class, $supplyRequest])
-        <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:12px"
-                data-bs-toggle="collapse" data-bs-target="#addExternalOrderForm">
-            <i class="bi bi-plus"></i> Adicionar
-        </button>
-        @endcan
-    </div>
-
-    @can('create', [\App\Models\ExternalOrder::class, $supplyRequest])
-    <div class="collapse mb-3" id="addExternalOrderForm">
-        <form method="POST" action="{{ route('requests.external-orders.store', $supplyRequest) }}"
-              enctype="multipart/form-data"
-              class="row g-2 align-items-end p-3 rounded-2" style="background:#F8FAFC;border:1px solid #E2E9F4">
-            @csrf
-            <div class="col-md-2">
-                <label class="form-label" style="font-size:12px">Nº Pedido</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text fw-semibold" style="font-family:monospace;color:#0369A1;font-size:12px">0000</span>
-                    <input type="number" name="order_number" class="form-control form-control-sm"
-                           min="1" max="9999" placeholder="1" style="font-family:monospace">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" style="font-size:12px">Observações</label>
-                <input type="text" name="notes" class="form-control form-control-sm"
-                       maxlength="500" placeholder="Opcional">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" style="font-size:12px">
-                    Arquivo <span class="text-danger">*</span>
-                    <span class="text-muted fw-normal">(PDF, JPG ou PNG · máx. 10 MB)</span>
-                </label>
-                <input type="file" name="file" class="form-control form-control-sm"
-                       accept=".pdf,.jpg,.jpeg,.png" required>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Salvar</button>
-            </div>
-        </form>
-    </div>
-    @endcan
-
-    @if($supplyRequest->externalOrders->isEmpty())
-    <p class="text-muted mb-0" style="font-size:13px">Nenhum pedido registrado.</p>
-    @else
-    <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Nº Pedido</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Observações</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Arquivo</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Registrado por</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Data</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($supplyRequest->externalOrders as $eo)
-                <tr>
-                    <td style="font-size:13px;font-family:monospace;font-weight:600;color:#0369A1">
-                        @if($eo->order_number)
-                            {{ str_pad((int) $eo->order_number, 4, '0', STR_PAD_LEFT) }}
-                        @else
-                            <span style="color:#CBD5E1">—</span>
-                        @endif
-                    </td>
-                    <td style="font-size:13px;color:#64748B">{{ $eo->notes ?? '—' }}</td>
-                    <td style="font-size:13px">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="color:#374151">{{ Str::limit($eo->original_name, 22) }}</span>
-                            <a href="{{ route('requests.external-orders.view', [$supplyRequest, $eo]) }}"
-                               target="_blank"
-                               class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 7px">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
-                            <a href="{{ route('requests.external-orders.download', [$supplyRequest, $eo]) }}"
-                               class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 7px">
-                                <i class="bi bi-download"></i>
-                            </a>
-                        </div>
-                    </td>
-                    <td style="font-size:13px;color:#64748B">{{ $eo->registeredBy->name }}</td>
-                    <td style="font-size:12px;color:#94A3B8;white-space:nowrap">
-                        {{ $eo->created_at->format('d/m/Y') }}
-                    </td>
-                    <td>
-                        @can('delete', $eo)
-                        <form method="POST" action="{{ route('requests.external-orders.destroy', [$supplyRequest, $eo]) }}"
-                              onsubmit="return confirm('Remover este pedido?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    style="font-size:11px;padding:2px 6px">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                        @endcan
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endif
-</div>
-
 {{-- Request Attachments --}}
 <div class="cs-card mt-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -609,18 +512,42 @@
               enctype="multipart/form-data"
               class="row g-2 align-items-end p-3 rounded-2" style="background:#F8FAFC;border:1px solid #E2E9F4">
             @csrf
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label" style="font-size:12px">
                     Tipo <span class="text-danger">*</span>
                 </label>
-                <select name="type" class="form-select form-select-sm" required>
+                <select name="type" class="form-select form-select-sm" id="attachmentType" required>
                     <option value="" disabled selected>Selecionar…</option>
                     @foreach(\App\Enums\AttachmentType::cases() as $t)
                     <option value="{{ $t->value }}">{{ $t->label() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-2" id="poField" style="display:none">
+                <label class="form-label" style="font-size:12px">Pedido de Compra</label>
+                @php
+                    $pcs = $supplyRequest->items
+                        ->pluck('order_number')
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                        ->values();
+                @endphp
+                <select name="order_number" class="form-select form-select-sm">
+                    <option value="">Nenhum</option>
+                    @foreach($pcs as $pc)
+                    <option value="{{ $pc }}">{{ $pc }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <script>
+            document.getElementById('attachmentType').addEventListener('change', function() {
+                const poField = document.getElementById('poField');
+                poField.style.display = this.value === 'purchase_order' ? '' : 'none';
+            });
+            </script>
+            <div class="col-md-4">
                 <label class="form-label" style="font-size:12px">
                     Arquivo <span class="text-danger">*</span>
                     <span class="text-muted fw-normal">(PDF, JPG ou PNG · máx. 10 MB)</span>
@@ -643,6 +570,7 @@
             <thead class="table-light">
                 <tr>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tipo</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">PC</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Arquivo</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tamanho</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Enviado por</th>
@@ -657,6 +585,9 @@
                         <span class="cs-badge cs-badge-inProgress" style="font-size:10px">
                             {{ $att->type->label() }}
                         </span>
+                    </td>
+                    <td style="font-size:12px;font-family:monospace;font-weight:600;color:#0369A1">
+                        {{ $att->order_number ?? '—' }}
                     </td>
                     <td style="font-size:13px">
                         <div class="d-flex align-items-center gap-2">
@@ -818,12 +749,16 @@
 </div>
 @endcan
 
-{{-- Barra de confirmação de status em lote --}}
+@endsection
+
+@push('modals')
+{{-- Barra de confirmação de status em lote (fora do container) --}}
 <div id="batch-bar" class="d-none"
-     style="position:fixed;bottom:0;left:0;right:0;z-index:1040;
+     style="position:fixed;bottom:0;left:0;right:0;top:auto;z-index:9999;
             background:#1E293B;padding:12px 24px;
             display:flex;align-items:center;justify-content:space-between;gap:12px;
-            box-shadow:0 -4px 20px rgba(0,0,0,.25)">
+            box-shadow:0 -4px 20px rgba(0,0,0,.25);
+            width:100%;max-width:100vw;pointer-events:auto">
     <span style="color:#fff;font-size:14px;font-weight:500">
         <i class="bi bi-clock-history me-2" style="color:#60A5FA"></i>
         <span id="batch-count">0</span> item(ns) com status pendente
@@ -833,13 +768,12 @@
                 style="color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2)">
             Descartar
         </button>
-        <button id="btn-confirm-batch" class="btn btn-sm btn-primary" onclick="confirmBatch()">
-            <i class="bi bi-check me-1"></i>Confirmar alterações
+        <button id="btn-confirm-batch" class="btn btn-sm btn-primary" onclick="confirmAllChanges()">
+            <i class="bi bi-check me-1"></i>Confirmar Alterações
         </button>
     </div>
 </div>
-
-@endsection
+@endpush
 
 
 @can('cancelDirect', $supplyRequest)
@@ -1045,7 +979,25 @@ const BATCH_URL   = @js(route('requests.items.batchStatus', $supplyRequest));
 const BATCH_CSRF  = @js(csrf_token());
 
 let staged    = {};          // { [itemId]: { order_number? } }
+let modified  = {};          // { [itemId]: true } — items com mudanças em quantity/unit
 let batchItemId = null;      // item aguardando número PC no modal
+
+// Rastrear mudanças em quantity/unit
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name^="items["][name$="][quantity]"], input[name^="items["][name$="][unit]"]').forEach(input => {
+        const itemId = input.name.match(/items\[(\d+)\]/)[1];
+        const originalValue = input.value;
+
+        input.addEventListener('change', function() {
+            if (this.value !== originalValue) {
+                modified[itemId] = true;
+            } else {
+                delete modified[itemId];
+            }
+            updateBar();
+        });
+    });
+});
 
 function stageAdvance(id, isQuoting, itemName, nextLabel) {
     if (isQuoting) {
@@ -1086,12 +1038,99 @@ function unstage(id) {
 
 function clearAllStaged() {
     Object.keys(staged).forEach(id => unstage(parseInt(id)));
+    modified = {};
+    updateBar();
 }
 
 function updateBar() {
-    const count = Object.keys(staged).length;
-    document.getElementById('batch-count').textContent = count;
-    document.getElementById('batch-bar').classList.toggle('d-none', count === 0);
+    const stagedCount = Object.keys(staged).length;
+    const modifiedCount = Object.keys(modified).length;
+    const totalCount = stagedCount + modifiedCount;
+
+    document.getElementById('batch-count').textContent = totalCount;
+    document.getElementById('batch-bar').classList.toggle('d-none', totalCount === 0);
+}
+
+async function confirmAllChanges() {
+    const itemsForm = document.getElementById('items-form');
+    const btn = document.getElementById('btn-confirm-batch');
+
+    if (!itemsForm || !btn) {
+        console.error('Form or button not found');
+        return;
+    }
+
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando…';
+
+    try {
+        // PASSO 1: Coleta dados do formulário como JSON
+        const formData = new FormData(itemsForm);
+        const items = {};
+        for (const [key, value] of formData) {
+            const match = key.match(/items\[(\d+)\]\[(\w+)\]/);
+            if (match) {
+                const [, id, field] = match;
+                items[id] = items[id] || {};
+                items[id][field] = value;
+            }
+        }
+
+        // PASSO 2: Salva os items (quantidade, unidade, notas)
+        const saveResp = await fetch(itemsForm.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ items }),
+        });
+
+        if (!saveResp.ok) {
+            alert('Erro ao salvar itens. Tente novamente.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            return;
+        }
+
+        // PASSO 3: Se há items staged, avança status
+        const hasStaged = Object.keys(staged).length > 0;
+        if (hasStaged) {
+            const stagedItems = Object.entries(staged).map(([id, data]) => ({
+                id: parseInt(id),
+                ...data
+            }));
+
+            const batchResp = await fetch(BATCH_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': BATCH_CSRF,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ items: stagedItems }),
+            });
+
+            if (!batchResp.ok) {
+                const json = await batchResp.json().catch(() => ({}));
+                alert(json.message || 'Erro ao confirmar status. Tente novamente.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                return;
+            }
+        }
+
+        // Sucesso: recarrega página
+        window.location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert('Erro de conexão. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
 
 async function confirmBatch() {

@@ -434,7 +434,13 @@ window.ADD_URL  = '{{ route('items.inline') }}';
             });
         });
 
-        document.getElementById('btn-add-row').addEventListener('click', () => addRow());
+        const itemsTbody = document.getElementById('items-tbody');
+        if (!itemsTbody) return; // Script só executa em páginas com tabela de items
+
+        const btnAddRow = document.getElementById('btn-add-row');
+        if (btnAddRow) {
+            btnAddRow.addEventListener('click', () => addRow());
+        }
 
         const rows = window.__initialItemRows || [];
         rows.length ? rows.forEach(addRow) : addRow();

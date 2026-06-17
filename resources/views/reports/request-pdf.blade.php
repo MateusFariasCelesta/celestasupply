@@ -178,6 +178,28 @@
                 <span class="info-value">{{ $supplyRequest->user->name }}</span>
             </td>
         </tr>
+        @php
+            $pcs = $supplyRequest->items
+                ->pluck('order_number')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                ->values()
+                ->all();
+        @endphp
+        @if(count($pcs) > 0)
+        <tr>
+            <td colspan="4">
+                <span class="info-label">Pedidos (PC)</span>
+                <span class="info-value" style="display:flex;gap:6px;flex-wrap:wrap">
+                    @foreach($pcs as $pc)
+                    <span class="badge badge-draft">{{ $pc }}</span>
+                    @endforeach
+                </span>
+            </td>
+        </tr>
+        @endif
         @if($supplyRequest->notes)
         <tr>
             <td colspan="4">
