@@ -3,7 +3,7 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "startCommand": "railway/init-app.sh"
+    "startCommand": "sh -c 'railway/init-app.sh && nginx -g \"daemon off;\"'"
   },
   "volumes": {
     "storage": "/app/storage"
