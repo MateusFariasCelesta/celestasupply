@@ -434,7 +434,10 @@ window.ADD_URL  = '{{ route('items.inline') }}';
             });
         });
 
-        document.getElementById('btn-add-row').addEventListener('click', () => addRow());
+        const btnAddRow = document.getElementById('btn-add-row');
+        if (btnAddRow) {
+            btnAddRow.addEventListener('click', () => addRow());
+        }
 
         const rows = window.__initialItemRows || [];
         rows.length ? rows.forEach(addRow) : addRow();
