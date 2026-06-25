@@ -35,7 +35,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/status', [RequestItemController::class, 'updateStatus'])->name('requests.items.status');
     Route::post('requests/{supplyRequest}/items/batch-status', [RequestItemController::class, 'batchStatus'])->name('requests.items.batchStatus');
     Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/jump-status', [RequestItemController::class, 'jumpStatus'])->name('requests.items.jumpStatus');
-    Route::patch('requests/{supplyRequest}/items/{supplyRequestItem}/supplier', [RequestItemController::class, 'setSupplier'])->name('requests.items.supplier');
     Route::delete('requests/{supplyRequest}/items/{supplyRequestItem}', [RequestItemController::class, 'cancel'])->name('requests.items.cancel');
     Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/deliver', [RequestItemController::class, 'registerDelivery'])->name('requests.items.deliver');
     Route::post('requests/{supplyRequest}/items/{supplyRequestItem}/request-cancellation', [RequestItemController::class, 'requestCancellation'])->name('requests.items.requestCancellation');

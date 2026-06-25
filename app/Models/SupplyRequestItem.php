@@ -16,7 +16,6 @@ class SupplyRequestItem extends Model
         'quantity',
         'unit',
         'notes',
-        'supplier_id',
         'order_number',
         'status',
         'delivered_quantity',
@@ -39,11 +38,6 @@ class SupplyRequestItem extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
-    }
-
-    public function supplier(): BelongsTo
-    {
-        return $this->belongsTo(Supplier::class);
     }
 
     public function attachment(): HasOne

@@ -269,24 +269,6 @@
             </div>
         </div>
 
-        {{-- Fornecedor --}}
-        <div class="mb-3">
-            <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Fornecedor</div>
-            @can('setSupplier', $item)
-            <form method="POST" action="{{ route('requests.items.supplier', [$supplyRequest, $item]) }}">
-                @csrf @method('PATCH')
-                <select name="supplier_id" class="form-select form-select-sm" onchange="this.form.submit()" style="font-size:12px">
-                    <option value="">— Nenhum —</option>
-                    @foreach($suppliers as $s)
-                    <option value="{{ $s->id }}" @selected($item->supplier_id == $s->id)>{{ $s->name }}</option>
-                    @endforeach
-                </select>
-            </form>
-            @else
-            <span style="color:#374151">{{ $item->supplier?->name ?? '—' }}</span>
-            @endcan
-        </div>
-
         @if($item->notes)
         <div class="mb-3">
             <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Observações</div>
@@ -541,10 +523,25 @@
                     @endforeach
                 </select>
             </div>
+            <div class="col-md-2" id="supplierField" style="display:none">
+                <label class="form-label" style="font-size:12px">
+                    Fornecedor <span class="text-danger">*</span>
+                </label>
+                <select name="supplier_id" class="form-select form-select-sm" id="supplierSelect">
+                    <option value="" disabled selected>Selecionar…</option>
+                    @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                    @endforeach
+                </select>
+            </div>
             <script>
             document.getElementById('attachmentType').addEventListener('change', function() {
                 const poField = document.getElementById('poField');
-                poField.style.display = this.value === 'purchase_order' ? '' : 'none';
+                const supplierField = document.getElementById('supplierField');
+                const isPO = this.value === 'purchase_order';
+                poField.style.display = isPO ? '' : 'none';
+                supplierField.style.display = isPO ? '' : 'none';
+                document.getElementById('supplierSelect').required = isPO;
             });
             </script>
             <div class="col-md-4">
@@ -571,6 +568,7 @@
                 <tr>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tipo</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">PC</th>
+                    <th style="font-size:12px;color:#64748B;font-weight:600">Fornecedor</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Arquivo</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Tamanho</th>
                     <th style="font-size:12px;color:#64748B;font-weight:600">Enviado por</th>
@@ -588,6 +586,9 @@
                     </td>
                     <td style="font-size:12px;font-family:monospace;font-weight:600;color:#0369A1">
                         {{ $att->order_number ?? '—' }}
+                    </td>
+                    <td style="font-size:13px;color:#64748B">
+                        {{ $att->supplier?->name ?? '—' }}
                     </td>
                     <td style="font-size:13px">
                         <div class="d-flex align-items-center gap-2">

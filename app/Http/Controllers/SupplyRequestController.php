@@ -102,10 +102,10 @@ class SupplyRequestController extends Controller
             'costCenter',
             'user',
             'items.item',
-            'items.supplier',
             'items.attachment.uploadedBy',
             'items.deliveries.registeredBy',
             'attachments.uploadedBy',
+            'attachments.supplier',
             'statusHistory.changedBy',
         ]);
 
