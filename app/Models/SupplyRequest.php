@@ -53,4 +53,22 @@ class SupplyRequest extends Model
     {
         return $this->hasMany(RequestAttachment::class);
     }
+
+    public function scopeWithPendingCount($query)
+    {
+        return $query->withCount([
+            'items as pending_items_count' => fn($q) =>
+                $q->whereIn('status', ['pending', 'quoting'])
+        ]);
+    }
+
+    public function hasPendingItems(): bool
+    {
+        return ($this->pending_items_count ?? 0) > 0;
+    }
+
+    public function getPendingItemsCount(): int
+    {
+        return $this->pending_items_count ?? 0;
+    }
 }
