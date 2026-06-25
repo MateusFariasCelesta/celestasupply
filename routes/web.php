@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('items', ItemController::class)->except(['show', 'destroy']);
     Route::get('lookup/items', [ItemController::class, 'search'])->name('items.suggest');
     Route::post('lookup/items', [ItemController::class, 'apiStore'])->name('items.inline');
+    Route::get('api/items/all', [ItemController::class, 'getAllItems'])->name('items.all');
 
     // Reports export (buyer + admin)
     Route::get('reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
