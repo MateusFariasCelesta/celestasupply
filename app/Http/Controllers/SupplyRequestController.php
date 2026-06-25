@@ -23,6 +23,7 @@ class SupplyRequestController extends Controller
         $this->authorize('viewAny', SupplyRequest::class);
 
         $query = SupplyRequest::with(['costCenter', 'user', 'items.item'])
+            ->withPendingCount()
             ->orderByDesc('created_at');
 
         if (!auth()->user()->isBuyerOrAdmin()) {
@@ -101,10 +102,10 @@ class SupplyRequestController extends Controller
             'costCenter',
             'user',
             'items.item',
-            'items.supplier',
             'items.attachment.uploadedBy',
             'items.deliveries.registeredBy',
             'attachments.uploadedBy',
+            'attachments.supplier',
             'statusHistory.changedBy',
         ]);
 

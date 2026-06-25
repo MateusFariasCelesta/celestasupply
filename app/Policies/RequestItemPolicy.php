@@ -32,19 +32,6 @@ class RequestItemPolicy
         return $item->supplyRequest->status !== RequestStatus::Completed;
     }
 
-    public function setSupplier(User $user, SupplyRequestItem $item): bool
-    {
-        if (!$user->isBuyerOrAdmin() || $item->status === ItemStatus::Cancelled) {
-            return false;
-        }
-
-        if ($item->supplyRequest->status === RequestStatus::Cancelled) {
-            return $this->isPurchasedOrAbove($item->status);
-        }
-
-        return $item->supplyRequest->status !== RequestStatus::Completed;
-    }
-
     public function cancel(User $user, SupplyRequestItem $item): bool
     {
         $uncancellable = [ItemStatus::Received, ItemStatus::Cancelled, ItemStatus::CancelRequested];

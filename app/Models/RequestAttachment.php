@@ -18,6 +18,7 @@ class RequestAttachment extends Model
         'size_kb',
         'uploaded_by',
         'order_number',
+        'supplier_id',
     ];
 
     protected $casts = [
@@ -32,5 +33,10 @@ class RequestAttachment extends Model
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

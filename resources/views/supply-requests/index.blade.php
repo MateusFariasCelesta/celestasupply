@@ -154,6 +154,15 @@
                     </div>
                 </div>
             </div>
+            <div class="col-6 col-md-auto">
+                <label class="form-label fw-semibold" style="font-size:12px">Filtro</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="f-has-pending" value="true">
+                    <label class="form-check-label" for="f-has-pending" style="font-size:13px;font-weight:500;cursor:pointer;user-select:none">
+                        Apenas com pendências
+                    </label>
+                </div>
+            </div>
             <div class="col-auto">
                 <button type="button" id="f-clear" class="btn btn-sm btn-outline-secondary" style="display:none">
                     <i class="bi bi-x me-1"></i>Limpar
@@ -178,6 +187,7 @@
                     <th data-sort-col="urgencyOrder" style="{{ $thStyle }}">Urgência <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="statusLabel" style="{{ $thStyle }}">Status <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="date" style="{{ $thStyle }}">Data <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th style="{{ $thStyle }}">Pendências</th>
                 </tr>
             </thead>
             <tbody id="requests-tbody">
@@ -206,7 +216,8 @@
                     data-cc-name="{{ $sr->costCenter->name }}"
                     data-user-name="{{ $sr->user->name }}"
                     data-urgency-order="{{ $urgencyOrder }}"
-                    data-status-label="{{ $sr->status->label() }}">
+                    data-status-label="{{ $sr->status->label() }}"
+                    data-pending-count="{{ $sr->getPendingItemsCount() }}">
                     <td>
                         <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
                             {{ $sr->code ?? '—' }}
@@ -220,6 +231,18 @@
                     <td><span class="cs-badge {{ $sr->urgency->badgeClass() }}">{{ $sr->urgency->label() }}</span></td>
                     <td><span class="cs-badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
                     <td style="font-size:13px;color:#64748B">{{ $sr->created_at->format('d/m/Y') }}</td>
+                    <td style="text-align:center" onclick="event.stopPropagation()">
+                        @if($sr->hasPendingItems())
+                            <a href="{{ route('requests.show', $sr) }}?highlight=pending"
+                               class="cs-badge"
+                               style="background:#F59E0B;color:white;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;display:inline-block"
+                               title="{{ $sr->getPendingItemsCount() }} item(ns) aguardando ação (Pendente ou Em Cotação)">
+                                ⚠ {{ $sr->getPendingItemsCount() }}
+                            </a>
+                        @else
+                            <span style="color:#D1D9E6;font-size:12px">—</span>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr id="empty-row">
@@ -259,12 +282,13 @@
     const rows     = Array.from(tbody.querySelectorAll('tr[data-search]'));
 
     const inputs = {
-        q:       document.getElementById('f-q'),
-        urgency: document.getElementById('f-urgency'),
-        cc:      document.getElementById('f-cc'),
-        user:    document.getElementById('f-user'),
-        from:    document.getElementById('f-from'),
-        to:      document.getElementById('f-to'),
+        q:         document.getElementById('f-q'),
+        urgency:   document.getElementById('f-urgency'),
+        cc:        document.getElementById('f-cc'),
+        user:      document.getElementById('f-user'),
+        from:      document.getElementById('f-from'),
+        to:        document.getElementById('f-to'),
+        hasPending: document.getElementById('f-has-pending'),
     };
 
     // URL query params management
@@ -277,7 +301,8 @@
             user: params.get('user_id') || '',
             from: params.get('from') || '',
             to: params.get('to') || '',
-            status: (params.getAll('status[]') || [])
+            status: (params.getAll('status[]') || []),
+            hasPending: params.get('has_pending') === 'true'
         };
     }
 
@@ -289,6 +314,7 @@
         if (inputs.user.value) params.append('user_id', inputs.user.value);
         if (inputs.from.value) params.append('from', inputs.from.value);
         if (inputs.to.value) params.append('to', inputs.to.value);
+        if (inputs.hasPending.checked) params.append('has_pending', 'true');
         document.querySelectorAll('.f-status-cb:checked').forEach(function(cb) {
             params.append('status[]', cb.value);
         });
@@ -328,6 +354,7 @@
 
         if (params.from) inputs.from.value = params.from;
         if (params.to) inputs.to.value = params.to;
+        if (params.hasPending) inputs.hasPending.checked = true;
 
         // Restore status checkboxes
         if (params.status.length) {
@@ -531,8 +558,9 @@
         const user        = inputs.user?.value    || '';
         const from        = inputs.from?.value    || '';
         const to          = inputs.to?.value      || '';
+        const hasPending  = inputs.hasPending?.checked || false;
 
-        const hasFilter = q || selStatuses.length || urgency || cc || user || from || to;
+        const hasFilter = q || selStatuses.length || urgency || cc || user || from || to || hasPending;
         clearBtn.style.display = hasFilter ? '' : 'none';
 
         let visible = 0;
@@ -544,8 +572,9 @@
             const matchUser    = !user    || row.dataset.user    === user;
             const matchFrom    = !from    || row.dataset.date    >= from;
             const matchTo      = !to      || row.dataset.date    <= to;
+            const matchPending = !hasPending || parseInt(row.dataset.pendingCount || 0) > 0;
 
-            const show = matchQ && matchStatus && matchUrgency && matchCc && matchUser && matchFrom && matchTo;
+            const show = matchQ && matchStatus && matchUrgency && matchCc && matchUser && matchFrom && matchTo && matchPending;
             row.style.display = show ? '' : 'none';
             if (show) visible++;
         });
@@ -567,9 +596,20 @@
         inputs[key]?.addEventListener('change', filter);
     });
 
+    // Checkbox "Apenas com pendências"
+    inputs.hasPending?.addEventListener('change', filter);
+
     // Limpar
     clearBtn?.addEventListener('click', function () {
-        Object.values(inputs).forEach(el => { if (el) el.value = ''; });
+        Object.values(inputs).forEach(el => {
+            if (el) {
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            }
+        });
         document.querySelectorAll('.f-status-cb').forEach(cb => cb.checked = false);
         updateStatusLabel();
         filter();

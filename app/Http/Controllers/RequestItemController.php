@@ -46,20 +46,6 @@ class RequestItemController extends Controller
         return back()->with('success', "Item avançado para: {$next->label()}.");
     }
 
-    public function setSupplier(Request $request, SupplyRequest $supplyRequest, SupplyRequestItem $supplyRequestItem): RedirectResponse
-    {
-        $this->authorize('setSupplier', $supplyRequestItem);
-        abort_if($supplyRequestItem->supply_request_id !== $supplyRequest->id, 404);
-
-        $data = $request->validate([
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
-        ]);
-
-        $supplyRequestItem->update(['supplier_id' => $data['supplier_id'] ?: null]);
-
-        return back()->with('success', 'Fornecedor atualizado.');
-    }
-
     public function jumpStatus(Request $request, SupplyRequest $supplyRequest, SupplyRequestItem $supplyRequestItem): RedirectResponse
     {
         $this->authorize('jumpStatus', $supplyRequestItem);

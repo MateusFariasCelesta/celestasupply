@@ -16,9 +16,7 @@ class ItemController extends Controller
     {
         $this->authorize('viewAny', Item::class);
 
-        $items = Item::orderBy('name')->paginate(25);
-
-        return view('items.index', compact('items'));
+        return view('items.index');
     }
 
     public function create(): View
@@ -53,6 +51,15 @@ class ItemController extends Controller
 
         return redirect()->route('items.index')
             ->with('success', 'Item atualizado com sucesso.');
+    }
+
+    public function getAllItems(): JsonResponse
+    {
+        $this->authorize('viewAny', Item::class);
+
+        $items = Item::orderBy('name')->get(['id', 'name', 'isActive']);
+
+        return response()->json($items);
     }
 
     // ── JSON API (usada no formulário de solicitações) ──────
