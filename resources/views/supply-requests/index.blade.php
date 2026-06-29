@@ -187,6 +187,7 @@
                     <th data-sort-col="urgencyOrder" style="{{ $thStyle }}">Urgência <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="statusLabel" style="{{ $thStyle }}">Status <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="date" style="{{ $thStyle }}">Data <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th style="{{ $thStyle }}">Nº Pedido</th>
                     <th style="{{ $thStyle }}">Pendências</th>
                 </tr>
             </thead>
@@ -194,12 +195,20 @@
                 @forelse($supplyRequests as $sr)
                 @php
                     $itemNames    = $sr->items->map(fn($i) => $i->item?->name ?? '')->implode(' ');
+                    $orderNumbers = $sr->items
+                        ->pluck('order_number')
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                        ->values();
                     $searchData   = strtolower(implode(' ', [
                         $sr->code ?? '',
                         $sr->title,
                         $sr->costCenter->name,
                         $sr->user->name,
                         $itemNames,
+                        $orderNumbers->implode(' '),
                     ]));
                     $urgencyOrder = $sr->urgency->sortOrder();
                 @endphp
@@ -217,6 +226,7 @@
                     data-user-name="{{ $sr->user->name }}"
                     data-urgency-order="{{ $urgencyOrder }}"
                     data-status-label="{{ $sr->status->label() }}"
+                    data-orders="{{ $orderNumbers->implode(' ') }}"
                     data-pending-count="{{ $sr->getPendingItemsCount() }}">
                     <td>
                         <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
@@ -232,6 +242,17 @@
                     <td><span class="cs-badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
                     <td style="font-size:13px;color:#64748B">{{ $sr->created_at->format('d/m/Y') }}</td>
                     <td style="text-align:center" onclick="event.stopPropagation()">
+                        @if($orderNumbers->isNotEmpty())
+                            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">
+                                @foreach($orderNumbers as $pc)
+                                <span class="badge bg-light text-dark border" style="font-size:11px;font-weight:600;font-family:monospace">{{ $pc }}</span>
+                                @endforeach
+                            </div>
+                        @else
+                            <span style="color:#D1D9E6;font-size:12px">—</span>
+                        @endif
+                    </td>
+                    <td style="text-align:center" onclick="event.stopPropagation()">
                         @if($sr->hasPendingItems())
                             <a href="{{ route('requests.show', $sr) }}?highlight=pending"
                                class="cs-badge"
@@ -246,7 +267,7 @@
                 </tr>
                 @empty
                 <tr id="empty-row">
-                    <td colspan="8" class="text-center py-5" style="color:#94A3B8">
+                    <td colspan="9" class="text-center py-5" style="color:#94A3B8">
                         <i class="bi bi-clipboard-check" style="font-size:32px;display:block;margin-bottom:8px"></i>
                         Nenhuma solicitação encontrada.
                     </td>
