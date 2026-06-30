@@ -221,7 +221,7 @@
             border: 1.5px solid #D1D9E6;
             border-radius: 11px;
             padding: 12px 15px;
-            font-size: 16px;
+            font-size: 14px;
             color: #0F172A;
             background: #fff;
             transition: border-color .3s cubic-bezier(.34,1.56,.64,1),

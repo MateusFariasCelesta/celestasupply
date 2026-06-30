@@ -315,8 +315,12 @@ input, textarea, select {
 
 /* Mobile: Ensure 16px font to avoid zoom */
 @media (max-width: 1023px) {
-  input, textarea, select {
-    font-size: 16px;
+  input, textarea, select,
+  .form-control, .form-select, .form-check-input,
+  [type="text"], [type="email"], [type="password"], [type="search"],
+  [type="tel"], [type="url"], [type="number"], [type="date"],
+  [type="time"], [type="datetime-local"], [type="month"], [type="week"] {
+    font-size: 16px !important;
     padding: var(--spacing-md);
   }
 }
