@@ -1,5 +1,5 @@
 <div class="cs-card mb-4">
-    {{-- Cabeçalho: título + botão desktop --}}
+    {{-- Cabeçalho --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
             <h6 class="fw-semibold mb-0" style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
@@ -8,16 +8,16 @@
                 <i class="bi bi-box-arrow-up-right"></i>
             </a>
         </div>
-        <button type="button" id="btn-add-row" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+        <button type="button" id="btn-add-row" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-plus-lg me-1"></i>Adicionar Linha
         </button>
     </div>
 
     @error('items')<div class="alert alert-danger py-2 mb-3" style="font-size:13px">{{ $message }}</div>@enderror
 
-    {{-- DESKTOP: Tabela (visível apenas em ≥768px) --}}
-    <div class="d-none d-md-block" style="overflow: visible">
-        <table class="table align-middle mb-0">
+    {{-- Items Container - Tabela em desktop, cards em mobile --}}
+    <div class="table-responsive" style="overflow: visible">
+        <table class="table align-middle mb-0" id="items-table">
             <thead class="table-light">
                 <tr>
                     <th style="font-size:12px;color:#64748B;font-weight:600;min-width:260px">Item</th>
@@ -32,249 +32,134 @@
         </table>
     </div>
 
-    {{-- MOBILE: Lista de cards (visível apenas em <768px) --}}
-    <div class="d-block d-md-none" id="mobile-items-section">
-        <div id="mobile-items-list">
-            <p id="mobile-items-empty" style="font-size:13px;color:#94A3B8;text-align:center;padding:16px 0;margin:0">
-                <i class="bi bi-inbox me-1"></i>Nenhum item adicionado.
-            </p>
-        </div>
-        <button type="button" id="btn-add-item-mobile"
-                data-bs-toggle="offcanvas" data-bs-target="#offcanvas-item-sheet"
-                aria-controls="offcanvas-item-sheet"
-                class="btn btn-outline-primary w-100 mt-3"
-                style="border-style:dashed;border-radius:10px;padding:12px">
-            <i class="bi bi-plus-lg me-2"></i>Adicionar Item
-        </button>
-    </div>
+    <p id="items-empty" style="font-size:13px;color:#94A3B8;text-align:center;padding:16px 0;margin:0;display:none">
+        <i class="bi bi-inbox me-1"></i>Nenhum item adicionado.
+    </p>
 </div>
 
 @push('styles')
 <style>
-/* ── Mobile item cards ── */
+/* Mobile: Converter tabela em cards sem scroll horizontal */
 @media (max-width: 767px) {
-    #mobile-items-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    .table-responsive {
+        overflow: visible !important;
     }
 
-    .mobile-item-card {
-        background: #F8FAFC;
+    #items-table {
+        display: block !important;
+        border: none;
+        width: 100%;
+    }
+
+    #items-table thead {
+        display: none !important;
+    }
+
+    #items-table tbody {
+        display: block !important;
+    }
+
+    #items-table tr {
+        display: grid;
+        grid-template-columns: 1fr 70px 70px 34px;
         border: 1px solid #E2E9F4;
         border-radius: 10px;
         padding: 12px 14px;
-        display: flex;
+        margin-bottom: 10px;
+        background: #F8FAFC;
+        width: 100%;
+        gap: 8px;
         align-items: flex-start;
-        justify-content: space-between;
-        gap: 10px;
-        transition: background .15s;
     }
 
-    .mobile-item-card:active {
-        background: #F1F5F9;
-    }
-
-    .mobile-item-card-body {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .mobile-item-card-name {
-        font-size: 14px;
-        font-weight: 600;
-        color: #0F172A;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 3px;
-    }
-
-    .mobile-item-card-meta {
-        font-size: 12px;
-        color: #64748B;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .mobile-item-card-actions {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
+    #items-table td {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        padding: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        min-height: auto;
+        word-break: break-word;
+        gap: 4px;
         align-items: center;
     }
 
-    .mobile-item-card-btn {
-        background: none;
-        border: 1px solid #E2E9F4;
-        border-radius: 8px;
-        width: 34px;
+    /* Item: linha 1, full width */
+    #items-table td:nth-child(1) {
+        grid-column: 1 / -1;
+        grid-template-columns: auto 1fr;
+    }
+
+    /* Quantidade: linha 2, coluna 1 */
+    #items-table td:nth-child(2) {
+        grid-column: 1;
+        grid-row: 2;
+        grid-template-columns: auto 1fr;
+    }
+
+    /* Unidade: linha 2, coluna 2 */
+    #items-table td:nth-child(3) {
+        grid-column: 2;
+        grid-row: 2;
+        grid-template-columns: auto 1fr;
+    }
+
+    /* Observação: linha 3, full width */
+    #items-table td:nth-child(4) {
+        grid-column: 1 / -1;
+    }
+
+    /* Anexo: linha 4, full width */
+    #items-table td:nth-child(5) {
+        grid-column: 1 / -1;
+    }
+
+    /* Botão remove: linha 2, coluna 4 (pequeno) */
+    #items-table td:nth-child(6) {
+        grid-column: 4;
+        grid-row: 2;
+        justify-content: flex-start;
+    }
+
+    #items-table td:nth-child(6) button {
+        width: auto !important;
+        padding: 4px 6px !important;
+        font-size: 12px !important;
+        min-width: 34px;
         height: 34px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
+    }
+
+    #items-table td:before {
+        content: attr(data-label);
+        display: block;
+        font-weight: 600;
+        font-size: 10px;
+        text-transform: uppercase;
         color: #64748B;
-        font-size: 14px;
-        transition: background .15s, color .15s, border-color .15s;
-        flex-shrink: 0;
-        padding: 0;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
     }
 
-    .mobile-item-card-btn:active {
-        background: #F1F5F9;
+    #items-table .form-control,
+    #items-table .form-select {
+        font-size: 13px !important;
+        padding: 6px 8px !important;
+        width: 100% !important;
+        max-width: none !important;
     }
 
-    .mobile-item-card-btn.edit:active {
-        color: #3B82F6;
-        border-color: #BFDBFE;
-        background: #EFF6FF;
+    #items-table .btn {
+        width: 100%;
     }
 
-    .mobile-item-card-btn.remove:active {
-        color: #DC2626;
-        border-color: #FECACA;
-        background: #FEF2F2;
+    #items-table .d-flex {
+        flex-direction: column !important;
+        gap: 4px !important;
     }
-}
 
-/* Offcanvas z-index management */
-.offcanvas-backdrop {
-    z-index: 999 !important;
-}
-
-#offcanvas-item-sheet {
-    z-index: 1050 !important;
-}
-
-#offcanvas-item-sheet {
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    #items-table .d-flex > * {
+        width: 100% !important;
+    }
 }
 </style>
-@endpush
-
-@push('modals')
-<div class="offcanvas offcanvas-bottom"
-     tabindex="-1"
-     id="offcanvas-item-sheet"
-     aria-labelledby="offcanvas-item-sheet-label"
-     style="height: auto; max-height: 92vh; border-radius: 16px 16px 0 0; border-top: 1px solid #E2E9F4;">
-
-    <div class="offcanvas-header" style="border-bottom: 1px solid #F1F5F9; padding: 16px 20px 12px; position: relative;">
-        <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#E2E8F0;border-radius:4px"></div>
-        <h5 class="offcanvas-title fw-semibold"
-            id="offcanvas-item-sheet-label"
-            style="font-size:15px;color:#0F172A">
-            Adicionar Item
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
-    </div>
-
-    <div class="offcanvas-body" style="padding: 20px; overflow-y: auto;">
-
-        <!-- Item picker -->
-        <div class="mb-3" id="mobile-picker-wrapper">
-            <label class="form-label fw-semibold" style="font-size:13px">
-                Item <span class="text-danger">*</span>
-            </label>
-            <div class="js-picker" id="mobile-item-picker" style="position:relative">
-                <div class="js-btn form-control d-flex align-items-center justify-content-between"
-                     style="cursor:pointer;user-select:none;padding: 10px 14px" tabindex="0">
-                    <span class="js-label"
-                          id="mobile-picker-label"
-                          style="color:#94A3B8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                        <i class="bi bi-search me-2" style="font-size:13px"></i>Pesquisar item...
-                    </span>
-                    <i class="bi bi-chevron-down js-chevron" style="font-size:11px;color:#94A3B8;flex-shrink:0;margin-left:6px"></i>
-                </div>
-                <input type="hidden" class="js-id" id="mobile-picker-id" value="">
-
-                <div class="js-panel"
-                     style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;
-                            z-index:1060;background:#fff;border:1px solid #E2E8F0;
-                            border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.18)">
-                    <div style="padding:8px">
-                        <input type="text"
-                               class="form-control js-search"
-                               id="mobile-picker-search"
-                               placeholder="Filtrar..."
-                               autocomplete="off">
-                    </div>
-                    <div class="js-list" style="max-height:200px;overflow-y:auto"></div>
-                    <div style="border-top:1px solid #E2E8F0;padding:8px 10px">
-                        <button type="button" class="js-create-btn"
-                                style="display:none;background:none;border:none;padding:0;
-                                       cursor:pointer;font-size:13px;color:#3B82F6;
-                                       align-items:center;gap:6px">
-                            <i class="bi bi-plus-circle"></i>
-                            <span class="js-create-label"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div id="mobile-picker-error"
-                 style="display:none;font-size:12px;color:#DC2626;margin-top:4px">
-                <i class="bi bi-exclamation-triangle-fill"></i> Selecione um item
-            </div>
-        </div>
-
-        <!-- Qtd + Unidade -->
-        <div class="row g-3 mb-3">
-            <div class="col-6">
-                <label class="form-label fw-semibold" style="font-size:13px">
-                    Qtd <span class="text-danger">*</span>
-                </label>
-                <input type="number"
-                       id="mobile-qty"
-                       class="form-control"
-                       min="0.001" step="any"
-                       value="1"
-                       placeholder="1">
-                <div id="mobile-qty-error"
-                     style="display:none;font-size:12px;color:#DC2626;margin-top:4px">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Quantidade inválida
-                </div>
-            </div>
-            <div class="col-6">
-                <label class="form-label fw-semibold" style="font-size:13px">
-                    Unidade <span class="text-danger">*</span>
-                </label>
-                <input type="text"
-                       id="mobile-unit"
-                       class="form-control"
-                       placeholder="un, kg, L…"
-                       maxlength="50">
-                <div id="mobile-unit-error"
-                     style="display:none;font-size:12px;color:#DC2626;margin-top:4px">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Obrigatório
-                </div>
-            </div>
-        </div>
-
-        <!-- Observações -->
-        <div class="mb-4">
-            <label class="form-label fw-semibold" style="font-size:13px">
-                Observações <span class="text-muted fw-normal">(opcional)</span>
-            </label>
-            <input type="text"
-                   id="mobile-notes"
-                   class="form-control"
-                   placeholder="Ex: para reunião de diretoria"
-                   maxlength="255">
-        </div>
-
-        <!-- Hidden state -->
-        <input type="hidden" id="mobile-editing-idx" value="">
-
-        <!-- Confirmar button -->
-        <button type="button"
-                id="btn-mobile-confirm-item"
-                class="btn btn-primary w-100"
-                style="padding:13px;font-size:15px;font-weight:600;border-radius:10px">
-            <i class="bi bi-check-lg me-2"></i>
-            <span id="btn-mobile-confirm-label">Adicionar</span>
-        </button>
-    </div>
-</div>
 @endpush
