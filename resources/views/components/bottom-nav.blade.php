@@ -78,7 +78,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 70px;
+    min-height: 70px;
     background: linear-gradient(135deg, #0A1628 0%, #0F2044 60%, #152848 100%);
     border-top: 1px solid rgba(59, 130, 246, 0.2);
     display: grid;
@@ -88,6 +88,9 @@
     z-index: 998;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
     padding-bottom: max(env(safe-area-inset-bottom), 0);
+    box-sizing: border-box;
+    transition: min-height 0.3s ease, padding-bottom 0.3s ease, transform 0.2s ease-out;
+    will-change: transform, padding-bottom;
   }
 
   .cs-bottom-nav-item {
@@ -101,12 +104,13 @@
     background: none;
     border: none;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     padding: 10px 0;
     min-width: 0;
     flex: 1;
     height: 100%;
+    will-change: color, transform;
   }
 
   .cs-bottom-nav-item:active {
@@ -166,16 +170,18 @@
   /* Bottom Menu Overlay */
   .cs-bottom-menu-overlay {
     position: fixed;
-    bottom: 64px;
+    bottom: 70px;
     left: 0;
     right: 0;
+    top: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: 997;
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
-    padding-bottom: max(env(safe-area-inset-bottom), 0);
+    overflow-y: auto;
+    box-sizing: border-box;
   }
 
   .cs-bottom-menu-overlay.open {

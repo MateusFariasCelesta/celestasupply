@@ -28,7 +28,9 @@
                 radial-gradient(ellipse at 85% 100%, rgba(15,32,68,.06) 0%, transparent 55%),
                 #F2F5FB;
             font-family: 'Inter', 'Segoe UI', sans-serif;
-            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -239,6 +241,9 @@
             padding: 32px 40px;
             max-width: 1400px;
             margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            transition: padding 0.3s ease-out;
         }
 
         .cs-page-title {
@@ -526,12 +531,13 @@
 
         /* ── Responsive ── */
         @media (max-width: 767px) {
+            body { min-height: 100dvh; }
             .cs-navbar    { display: none; }
             .cs-nav       { display: none; }
             .cs-user-info { display: none; }
             .cs-burger    { display: none; }
             .cs-mobile-menu { display: none; }
-            .cs-content   { padding: 20px 16px 80px; }
+            .cs-content   { padding: 20px 16px 80px; flex: 1; }
             .cs-card      { padding: 16px; border-radius: 10px; }
             .cs-page-title { font-size: 18px; }
         }
