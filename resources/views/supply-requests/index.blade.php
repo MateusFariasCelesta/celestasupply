@@ -509,13 +509,13 @@
 
     function updateUrlParams() {
         const params = new URLSearchParams();
-        if (inputs.q.value) params.append('q', inputs.q.value);
-        if (inputs.urgency.value) params.append('urgency', inputs.urgency.value);
-        if (inputs.cc.value) params.append('cost_center_id', inputs.cc.value);
-        if (inputs.user.value) params.append('user_id', inputs.user.value);
-        if (inputs.from.value) params.append('from', inputs.from.value);
-        if (inputs.to.value) params.append('to', inputs.to.value);
-        if (inputs.hasPending.checked) params.append('has_pending', 'true');
+        if (inputs.q?.value) params.append('q', inputs.q.value);
+        if (inputs.urgency?.value) params.append('urgency', inputs.urgency.value);
+        if (inputs.cc?.value) params.append('cost_center_id', inputs.cc.value);
+        if (inputs.user?.value) params.append('user_id', inputs.user.value);
+        if (inputs.from?.value) params.append('from', inputs.from.value);
+        if (inputs.to?.value) params.append('to', inputs.to.value);
+        if (inputs.hasPending?.checked) params.append('has_pending', 'true');
         document.querySelectorAll('.f-status-cb:checked').forEach(function(cb) {
             params.append('status[]', cb.value);
         });
@@ -527,9 +527,9 @@
     // Restore filters from URL params on page load
     function restoreFiltersFromUrl() {
         const params = getFilterParams();
-        if (params.q) inputs.q.value = params.q;
+        if (params.q && inputs.q) inputs.q.value = params.q;
 
-        if (params.urgency) {
+        if (params.urgency && inputs.urgency) {
             inputs.urgency.value = params.urgency;
             const urgencyLabel = document.querySelector('.f-urgency-opt[data-value="' + params.urgency + '"]');
             if (urgencyLabel) {
@@ -537,7 +537,7 @@
             }
         }
 
-        if (params.cc) {
+        if (params.cc && inputs.cc) {
             inputs.cc.value = params.cc;
             const ccLabel = document.querySelector('.f-cc-opt[data-value="' + params.cc + '"]');
             if (ccLabel) {
@@ -545,7 +545,7 @@
             }
         }
 
-        if (params.user) {
+        if (params.user && inputs.user) {
             inputs.user.value = params.user;
             const userLabel = document.querySelector('.f-user-opt[data-value="' + params.user + '"]');
             if (userLabel) {
@@ -553,9 +553,9 @@
             }
         }
 
-        if (params.from) inputs.from.value = params.from;
-        if (params.to) inputs.to.value = params.to;
-        if (params.hasPending) inputs.hasPending.checked = true;
+        if (params.from && inputs.from) inputs.from.value = params.from;
+        if (params.to && inputs.to) inputs.to.value = params.to;
+        if (params.hasPending && inputs.hasPending) inputs.hasPending.checked = true;
 
         // Restore status checkboxes
         if (params.status.length) {
