@@ -390,7 +390,8 @@
                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
                         <input id="password" type="password" name="password"
                                class="form-control"
-                               placeholder="••••••••"
+                               value="{{ old('password') }}"
+                               placeholder="Senha"
                                required>
                     </div>
                 </div>
