@@ -160,7 +160,7 @@ function itemsSearch() {
 
         parseQuery(query) {
             // Divide a query em tokens (palavras e números)
-            const tokens = query.trim().split(/\s+/).filter(t => t.length > 0);
+            const tokens = query.trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
             const textTokens = [];
             const numberTokens = [];
 
@@ -275,13 +275,18 @@ function itemsSearch() {
         async init() {
             try {
                 const response = await fetch('{{ route("items.all") }}');
+                if (!response.ok) throw new Error('Erro ao carregar itens');
                 this.allItems = await response.json();
 
                 const params = new URLSearchParams(window.location.search);
-                this.searchQuery = params.get('search') || '';
-                this.currentPage = parseInt(params.get('page')) || 1;
+                this.searchQuery = params.get('search')?.trim() || '';
+                const page = parseInt(params.get('page'));
+                this.currentPage = !isNaN(page) && page > 0 ? page : 1;
             } catch (error) {
                 console.error('Erro ao carregar itens:', error);
+                this.allItems = [];
+                this.searchQuery = '';
+                this.currentPage = 1;
             }
         },
 
@@ -302,11 +307,12 @@ function itemsSearch() {
         },
 
         goToPage(page) {
-            if (page >= 1 && page <= this.totalPages) {
-                this.currentPage = page;
+            const validPage = parseInt(page);
+            if (!isNaN(validPage) && validPage >= 1 && validPage <= this.totalPages) {
+                this.currentPage = validPage;
                 const params = new URLSearchParams();
 
-                if (this.searchQuery.trim()) {
+                if (this.searchQuery?.trim()) {
                     params.set('search', this.searchQuery.trim());
                 }
                 params.set('page', this.currentPage);

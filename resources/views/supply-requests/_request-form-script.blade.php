@@ -140,6 +140,30 @@ window.ADD_URL  = '{{ route('items.inline') }}';
         syncRemoveBtns();
     }
 
+    window.__mobileAddRow = function(data) {
+        rowCount++;
+        const tr = buildRow(rowCount, data);
+        tr.style.display = 'none';
+        document.getElementById('items-tbody').appendChild(tr);
+        syncRemoveBtns();
+        return { idx: rowCount, tr };
+    };
+
+    window.__mobileUpdateRow = function(tr, data) {
+        tr.querySelector('.js-id').value   = String(data.item_id || '');
+        tr.querySelector('.js-qty').value  = data.quantity || 1;
+        tr.querySelector('.js-unit').value = data.unit || '';
+        const notesInput = tr.querySelector('input[name*="[notes]"]');
+        if (notesInput) notesInput.value   = data.notes || '';
+        const label = tr.querySelector('.js-label');
+        if (label) { label.textContent = data.item_name || ''; label.style.color = '#0F172A'; }
+    };
+
+    window.__mobileRemoveRow = function(tr) {
+        tr.remove();
+        syncRemoveBtns();
+    };
+
     function syncRemoveBtns() {
         const btns = document.querySelectorAll('#items-tbody .js-rm');
         btns.forEach(b => b.style.display = btns.length > 1 ? '' : 'none');
@@ -179,9 +203,11 @@ window.ADD_URL  = '{{ route('items.inline') }}';
             label.textContent = item.name;
             label.style.color = '#0F172A';
             close();
-            addRow();
-            const rows = document.querySelectorAll('#items-tbody tr');
-            setTimeout(() => rows[rows.length - 1]?.querySelector('.js-btn')?.focus(), 0);
+            if (!window.__mobileSheetOpen) {
+                addRow();
+                const rows = document.querySelectorAll('#items-tbody tr');
+                setTimeout(() => rows[rows.length - 1]?.querySelector('.js-btn')?.focus(), 0);
+            }
         }
 
         function renderList(q) {
@@ -444,7 +470,410 @@ window.ADD_URL  = '{{ route('items.inline') }}';
 
         const rows = window.__initialItemRows || [];
         rows.length ? rows.forEach(addRow) : addRow();
+
+        if (rows.length) {
+            Promise.resolve().then(() => {
+                if (window.__renderMobileCards) window.__renderMobileCards(rows);
+            });
+        }
     });
 })();
+</script>
+@endpush
+
+@push('scripts')
+<script>
+// ── Sistema Mobile de Itens ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    if (!document.getElementById('mobile-items-list')) return;
+
+    const mobileItems = new Map();
+    let editingIdx = null;
+
+    const offcanvasEl    = document.getElementById('offcanvas-item-sheet');
+    const offcanvas      = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+    const mobileList     = document.getElementById('mobile-items-list');
+    const emptyMsg       = document.getElementById('mobile-items-empty');
+    const pickerEl       = document.getElementById('mobile-item-picker');
+    const pickerLabel    = document.getElementById('mobile-picker-label');
+    const pickerId       = document.getElementById('mobile-picker-id');
+    const pickerError    = document.getElementById('mobile-picker-error');
+    const qtyInput       = document.getElementById('mobile-qty');
+    const qtyError       = document.getElementById('mobile-qty-error');
+    const unitInput      = document.getElementById('mobile-unit');
+    const unitError      = document.getElementById('mobile-unit-error');
+    const notesInput     = document.getElementById('mobile-notes');
+    const confirmBtn     = document.getElementById('btn-mobile-confirm-item');
+    const confirmLabel   = document.getElementById('btn-mobile-confirm-label');
+    const sheetTitle     = document.getElementById('offcanvas-item-sheet-label');
+
+    offcanvasEl.addEventListener('show.bs.offcanvas',   () => window.__mobileSheetOpen = true);
+    offcanvasEl.addEventListener('hidden.bs.offcanvas', () => window.__mobileSheetOpen = false);
+
+    wireMobilePicker(pickerEl);
+
+    function wireMobilePicker(element) {
+        const CATALOG   = window.CATALOG;
+        const ADD_URL   = window.ADD_URL;
+        const btn       = element.querySelector('.js-btn');
+        const hid       = element.querySelector('.js-id');
+        const panel     = element.querySelector('.js-panel');
+        const search    = element.querySelector('.js-search');
+        const list      = element.querySelector('.js-list');
+        const createBtn = element.querySelector('.js-create-btn');
+        const createLbl = element.querySelector('.js-create-label');
+
+        function esc(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function renderList(q) {
+            const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            const hits = terms.length
+                ? CATALOG.filter(i => terms.every(t => i.name.toLowerCase().includes(t))).slice(0, 30)
+                : CATALOG.slice(0, 30);
+
+            list.innerHTML = '';
+
+            if (!hits.length) {
+                list.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:#94A3B8">Nenhum resultado.</div>';
+                return;
+            }
+
+            hits.forEach(function (item) {
+                const d = document.createElement('div');
+                d.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px';
+                d.innerHTML = `<i class="bi bi-box" style="color:#94A3B8;font-size:13px;flex-shrink:0"></i>${esc(item.name)}`;
+                d.addEventListener('touchstart', () => d.style.background = '#F1F5F9', { passive: true });
+                d.addEventListener('touchend',   () => d.style.background = '');
+                d.addEventListener('mouseenter', () => d.style.background = '#F1F5F9');
+                d.addEventListener('mouseleave', () => d.style.background = '');
+                d.addEventListener('click', function () {
+                    selectMobileItem(item);
+                });
+                list.appendChild(d);
+            });
+        }
+
+        function open() {
+            renderList(search.value);
+            panel.style.display = 'block';
+            setTimeout(() => search.focus(), 50);
+        }
+
+        function close() {
+            panel.style.display = 'none';
+        }
+
+        function selectMobileItem(item) {
+            hid.value = String(item.id);
+            const labelSpan = btn.querySelector('.js-label');
+            labelSpan.textContent = esc(item.name);
+            labelSpan.style.color = '#0F172A';
+            pickerError.style.display = 'none';
+            close();
+        }
+
+        function createNew(name) {
+            name = name.trim();
+            if (!name) return;
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+            fetch(ADD_URL, { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.id && data.name) {
+                        if (!CATALOG.find(i => i.id === data.id)) {
+                            CATALOG.push({ id: data.id, name: data.name });
+                        }
+                        selectMobileItem({ id: data.id, name: data.name });
+                        search.value = '';
+                    }
+                })
+                .catch(() => {
+                    if (!CATALOG.find(i => i.name.toLowerCase() === name.toLowerCase())) {
+                        CATALOG.push({ id: 'new:' + name, name });
+                    }
+                    selectMobileItem({ id: 'new:' + name, name });
+                });
+        }
+
+        btn.addEventListener('click', () => panel.style.display === 'none' ? open() : close());
+
+        search.addEventListener('input', function () {
+            renderList(search.value);
+            const q = search.value.trim();
+            if (q) {
+                createLbl.textContent = `Criar "${q}"`;
+                createBtn.style.display = 'flex';
+            } else {
+                createBtn.style.display = 'none';
+            }
+        });
+
+        search.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { close(); return; }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const first = list.querySelector('div[style*="cursor:pointer"]');
+                if (first) first.click();
+                else createNew(search.value);
+            }
+        });
+
+        createBtn.addEventListener('click', () => createNew(search.value));
+
+        offcanvasEl.addEventListener('click', function (e) {
+            if (!element.contains(e.target)) close();
+        });
+
+        offcanvasEl.querySelector('.offcanvas-body').addEventListener('scroll', close, { passive: true });
+    }
+
+    function renderCard(idx, data) {
+        const existing = mobileList.querySelector(`[data-mobile-idx="${idx}"]`);
+        if (existing) existing.remove();
+
+        const card = document.createElement('div');
+        card.className = 'mobile-item-card';
+        card.dataset.mobileIdx = idx;
+
+        const metaParts = [];
+        const qtyFormatted = parseFloat(data.quantity) % 1 === 0
+            ? parseInt(data.quantity)
+            : parseFloat(data.quantity);
+        metaParts.push(`${qtyFormatted} ${data.unit}`);
+        if (data.notes) metaParts.push(`Obs: ${data.notes}`);
+
+        card.innerHTML = `
+            <div class="mobile-item-card-body">
+                <div class="mobile-item-card-name" title="${escHtml(data.item_name)}">${escHtml(data.item_name)}</div>
+                <div class="mobile-item-card-meta">${escHtml(metaParts.join(' · '))}</div>
+            </div>
+            <div class="mobile-item-card-actions">
+                <button type="button" class="mobile-item-card-btn edit"
+                        data-action="edit" data-idx="${idx}"
+                        aria-label="Editar ${escHtml(data.item_name)}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="mobile-item-card-btn remove"
+                        data-action="remove" data-idx="${idx}"
+                        aria-label="Remover ${escHtml(data.item_name)}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+
+        card.querySelector('[data-action="edit"]').addEventListener('click', function () {
+            openSheetForEdit(idx);
+        });
+
+        card.querySelector('[data-action="remove"]').addEventListener('click', function () {
+            removeMobileItem(idx);
+        });
+
+        mobileList.appendChild(card);
+        syncEmptyMessage();
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function syncEmptyMessage() {
+        const hasCards = mobileList.querySelectorAll('.mobile-item-card').length > 0;
+        emptyMsg.style.display = hasCards ? 'none' : 'block';
+    }
+
+    document.getElementById('btn-add-item-mobile').addEventListener('click', function () {
+        openSheetForAdd();
+    });
+
+    function openSheetForAdd() {
+        editingIdx = null;
+        sheetTitle.textContent = 'Adicionar Item';
+        confirmLabel.textContent = 'Adicionar';
+        resetSheet();
+        offcanvas.show();
+    }
+
+    function openSheetForEdit(idx) {
+        const record = mobileItems.get(String(idx));
+        if (!record) return;
+
+        editingIdx = idx;
+        sheetTitle.textContent = 'Editar Item';
+        confirmLabel.textContent = 'Salvar';
+
+        resetSheet();
+
+        const data = record.data;
+        pickerId.value = String(data.item_id);
+        const labelSpan = pickerEl.querySelector('.js-label');
+        labelSpan.textContent = data.item_name;
+        labelSpan.style.color = '#0F172A';
+
+        qtyInput.value   = data.quantity;
+        unitInput.value  = data.unit;
+        notesInput.value = data.notes || '';
+
+        offcanvas.show();
+    }
+
+    function resetSheet() {
+        pickerId.value = '';
+        const labelSpan = pickerEl.querySelector('.js-label');
+        labelSpan.innerHTML = '<i class="bi bi-search me-2" style="font-size:13px"></i>Pesquisar item...';
+        labelSpan.style.color = '#94A3B8';
+
+        const panel = pickerEl.querySelector('.js-panel');
+        if (panel) panel.style.display = 'none';
+        const search = pickerEl.querySelector('.js-search');
+        if (search) search.value = '';
+        const createBtn = pickerEl.querySelector('.js-create-btn');
+        if (createBtn) createBtn.style.display = 'none';
+
+        qtyInput.value   = '1';
+        unitInput.value  = '';
+        notesInput.value = '';
+
+        pickerError.style.display = 'none';
+        qtyError.style.display    = 'none';
+        unitError.style.display   = 'none';
+        qtyInput.classList.remove('is-invalid');
+        unitInput.classList.remove('is-invalid');
+    }
+
+    confirmBtn.addEventListener('click', function () {
+        const itemId   = pickerId.value.trim();
+        const qty      = parseFloat(qtyInput.value);
+        const unit     = unitInput.value.trim();
+        const notes    = notesInput.value.trim();
+
+        let hasError = false;
+
+        if (!itemId) {
+            pickerError.style.display = 'block';
+            hasError = true;
+        } else {
+            pickerError.style.display = 'none';
+        }
+
+        if (isNaN(qty) || qty <= 0) {
+            qtyError.style.display = 'block';
+            qtyInput.classList.add('is-invalid');
+            hasError = true;
+        } else {
+            qtyError.style.display = 'none';
+            qtyInput.classList.remove('is-invalid');
+        }
+
+        if (!unit) {
+            unitError.style.display = 'block';
+            unitInput.classList.add('is-invalid');
+            hasError = true;
+        } else {
+            unitError.style.display = 'none';
+            unitInput.classList.remove('is-invalid');
+        }
+
+        if (hasError) return;
+
+        const catalogEntry = window.CATALOG.find(i => String(i.id) === itemId);
+        const itemName = catalogEntry ? catalogEntry.name : (pickerId.value.startsWith('new:') ? pickerId.value.slice(4) : itemId);
+
+        const data = { item_id: itemId, item_name: itemName, quantity: qty, unit, notes };
+
+        if (editingIdx !== null) {
+            const record = mobileItems.get(String(editingIdx));
+            if (record) {
+                record.data = data;
+                window.__mobileUpdateRow(record.tr, data);
+                renderCard(editingIdx, data);
+            }
+        } else {
+            const result = window.__mobileAddRow(data);
+            mobileItems.set(String(result.idx), { tr: result.tr, data });
+            renderCard(result.idx, data);
+        }
+
+        offcanvas.hide();
+    });
+
+    function removeMobileItem(idx) {
+        const record = mobileItems.get(String(idx));
+        if (!record) return;
+
+        window.__mobileRemoveRow(record.tr);
+        mobileItems.delete(String(idx));
+        const card = mobileList.querySelector(`[data-mobile-idx="${idx}"]`);
+        if (card) card.remove();
+
+        syncEmptyMessage();
+    }
+
+    window.__renderMobileCards = function(rows) {
+        const trs = document.querySelectorAll('#items-tbody tr');
+        rows.forEach(function(rowData, i) {
+            const tr = trs[i];
+            if (!tr) return;
+            const idx = tr.dataset.rowIdx;
+            const data = {
+                item_id:   rowData.item_id,
+                item_name: rowData.item_name,
+                quantity:  rowData.quantity,
+                unit:      rowData.unit || '',
+                notes:     rowData.notes || '',
+            };
+            if (window.innerWidth < 768) tr.style.display = 'none';
+            mobileItems.set(String(idx), { tr, data });
+            renderCard(idx, data);
+        });
+    };
+
+    offcanvasEl.addEventListener('hidden.bs.offcanvas', function () {
+        const panel = pickerEl.querySelector('.js-panel');
+        if (panel) panel.style.display = 'none';
+    });
+
+    // Sincronizar itens quando a janela redimensiona (desktop ↔ mobile)
+    let lastViewport = window.innerWidth;
+    window.addEventListener('resize', function () {
+        const currentViewport = window.innerWidth;
+        const wasMobile = lastViewport < 768;
+        const isMobile = currentViewport < 768;
+
+        if (wasMobile && !isMobile) {
+            // Mudou de mobile para desktop: mostra os <tr>
+            document.querySelectorAll('#items-tbody tr').forEach(tr => {
+                tr.style.display = '';
+            });
+        } else if (!wasMobile && isMobile) {
+            // Mudou de desktop para mobile: renderiza cards para <tr> existentes
+            document.querySelectorAll('#items-tbody tr').forEach(tr => {
+                const idx = tr.dataset.rowIdx;
+                if (!mobileItems.has(String(idx))) {
+                    // Este <tr> foi criado no desktop, precisa renderizar card no mobile
+                    const itemId = tr.querySelector('.js-id')?.value;
+                    const itemLabel = tr.querySelector('.js-label')?.textContent || 'Item';
+                    const qty = tr.querySelector('.js-qty')?.value || '1';
+                    const unit = tr.querySelector('.js-unit')?.value || '';
+                    const notes = tr.querySelector('input[name*="[notes]"]')?.value || '';
+
+                    if (itemId) {
+                        const data = { item_id: itemId, item_name: itemLabel, quantity: qty, unit, notes };
+                        mobileItems.set(String(idx), { tr, data });
+                        renderCard(idx, data);
+                        tr.style.display = 'none';
+                    }
+                }
+            });
+        }
+        lastViewport = currentViewport;
+    });
+
+    syncEmptyMessage();
+});
 </script>
 @endpush

@@ -24,6 +24,9 @@ class SupplyRequestPolicy
 
     public function view(User $user, SupplyRequest $sr): bool
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
         if ($sr->status === RequestStatus::Draft) {
             return $sr->user_id === $user->id;
         }

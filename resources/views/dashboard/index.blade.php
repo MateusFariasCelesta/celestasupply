@@ -278,8 +278,20 @@ $statusCards = [
     [\App\Enums\RequestStatus::Cancelled,       'bi-x-circle',        'text-secondary', '#94A3B8'],
     [\App\Enums\RequestStatus::Draft,           'bi-file-earmark',    'text-muted',     '#CBD5E1'],
 ];
+$draftCount = $counts->get('draft', 0);
+$thisMonth = $recent->filter(fn($r) => $r->created_at->isCurrentMonth())->count();
+$lastMonth = $recent->filter(fn($r) => $r->created_at->isLastMonth())->count();
+$trend = $thisMonth - $lastMonth;
 @endphp
 
+{{-- Quick Action --}}
+<div class="mb-4 dash-fade d1">
+    <a href="{{ route('requests.create') }}" class="btn btn-primary btn-lg" style="width:100%;padding:16px;font-size:15px;font-weight:600">
+        <i class="bi bi-plus-lg me-2"></i>Criar Nova Solicitação
+    </a>
+</div>
+
+{{-- Status Cards --}}
 <div class="row g-3 mb-4">
     @foreach($statusCards as [$status, $icon, $color, $hex])
     <div class="col-6 col-md-4 col-lg-2 dash-fade" style="animation-delay:{{ $loop->index * 0.07 }}s">
@@ -292,46 +304,81 @@ $statusCards = [
     @endforeach
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="section-title">Minhas Últimas Solicitações</div>
-    <a href="{{ route('requests.index') }}" class="btn btn-primary btn-sm">
-        Ver todas <i class="bi bi-arrow-right ms-1"></i>
-    </a>
-</div>
+{{-- Widgets Row: Ações Pendentes + Solicitações Recentes --}}
+<div class="row g-3 mb-4">
+    {{-- Ações Pendentes --}}
+    <div class="col-12 col-lg-6 dash-fade d5">
+        <div class="cs-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="section-title mb-0">
+                    <i class="bi bi-exclamation-circle me-2" style="color:#F59E0B"></i>Ações Pendentes
+                </div>
+                <span class="badge bg-warning text-dark">{{ $draftCount }}</span>
+            </div>
+            @php
+                $drafts = $recent->filter(fn($r) => $r->status->value === 'draft')->take(3);
+            @endphp
+            @if($drafts->isNotEmpty())
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+                    @foreach($drafts as $sr)
+                    <div style="padding:8px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:6px;cursor:pointer" onclick="window.location='{{ route('requests.edit', $sr) }}'">
+                        <div style="font-size:12px;font-weight:600;color:#92400E">{{ $sr->code ?? 'Nova' }}</div>
+                        <div style="font-size:11px;color:#B45309;margin-top:2px;line-height:1.3">{{ Str::limit($sr->title, 30) }}</div>
+                    </div>
+                    @endforeach
+                </div>
+                <a href="{{ route('requests.index', ['status[]' => 'draft']) }}" class="btn btn-sm btn-outline-warning w-100">
+                    Ver todas
+                </a>
+            @else
+                <div style="text-align:center;padding:20px;color:#94A3B8">
+                    <i class="bi bi-check-circle" style="font-size:20px;display:block;margin-bottom:6px"></i>
+                    <div style="font-size:12px">Tudo ok!</div>
+                </div>
+            @endif
+        </div>
+    </div>
 
-<div class="cs-card dash-fade d4">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th style="font-size:11.5px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Código</th>
-                    <th style="font-size:11.5px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Título</th>
-                    <th style="font-size:11.5px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Centro de Custo</th>
-                    <th style="font-size:11.5px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Status</th>
-                    <th style="font-size:11.5px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Data</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($recent as $sr)
-                <tr style="cursor:pointer" onclick="window.location='{{ route('requests.show', $sr) }}'">
-                    <td>
-                        <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">{{ $sr->code }}</span>
-                    </td>
-                    <td style="font-size:14px;font-weight:500;color:#0F172A">{{ $sr->title }}</td>
-                    <td style="font-size:13px;color:#64748B">{{ $sr->costCenter?->name ?? '—' }}</td>
-                    <td><span class="cs-badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
-                    <td style="font-size:13px;color:#64748B">{{ $sr->created_at->format('d/m/Y') }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" class="text-center py-5" style="color:#94A3B8">
-                        <i class="bi bi-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>
-                        Nenhuma solicitação encontrada.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+    {{-- Solicitações Recentes Compactas --}}
+    <div class="col-12 col-lg-6 dash-fade d6">
+        <div class="cs-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="section-title mb-0" style="font-size:13px">Solicitações Recentes</div>
+                <a href="{{ route('requests.index') }}" class="btn btn-sm btn-primary" style="padding:3px 8px;font-size:11px">Ver todas</a>
+            </div>
+            @php
+                $recentList = $recent->take(5);
+            @endphp
+            @if($recentList->isNotEmpty())
+                <div style="display:flex;flex-direction:column;gap:6px">
+                    @foreach($recentList as $sr)
+                    @php
+                        $orderNumbers = $sr->items
+                            ->pluck('order_number')
+                            ->filter()
+                            ->unique()
+                            ->sort()
+                            ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                            ->values();
+                    @endphp
+                    <div style="padding:8px;background:#F8FAFC;border-left:3px solid #3B82F6;border-radius:5px;cursor:pointer" onclick="window.location='{{ route('requests.show', $sr) }}'">
+                        <div style="font-size:11px;font-weight:600;color:#0F172A">{{ $sr->code ?? '—' }}</div>
+                        @if($orderNumbers->isNotEmpty())
+                            <div style="font-size:10px;color:#0369A1;font-family:monospace;margin-top:2px">{{ $orderNumbers->implode(', ') }}</div>
+                        @endif
+                        <div style="font-size:10px;color:#64748B;margin-top:2px">
+                            <span class="cs-badge {{ $sr->status->badgeClass() }}" style="font-size:9px">{{ $sr->status->label() }}</span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @else
+                <div style="text-align:center;padding:16px;color:#94A3B8">
+                    <i class="bi bi-inbox" style="font-size:18px;display:block;margin-bottom:4px"></i>
+                    <div style="font-size:11px">Nenhuma solicitação</div>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 

@@ -7,12 +7,23 @@
     <h1 class="cs-page-title mb-0">Solicitações</h1>
     <div class="d-flex gap-2">
         @if($isBuyerOrAdmin)
-        <button id="btn-export-excel" class="btn btn-sm fw-semibold" style="background:#217346;color:#fff;border:none;border-radius:6px">
-            <i class="bi bi-file-earmark-excel me-1"></i>Excel
-        </button>
-        <button id="btn-export-pdf" class="btn btn-sm fw-semibold" style="background:#DC2626;color:#fff;border:none;border-radius:6px">
-            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-        </button>
+        <div class="dropdown">
+            <button class="btn btn-sm fw-semibold" type="button" id="btn-export-dropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:6px 12px">
+                <i class="bi bi-download me-1"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="btn-export-dropdown">
+                <li>
+                    <button id="btn-export-excel" class="dropdown-item d-flex align-items-center gap-2 fw-semibold" style="color:#217346">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </li>
+                <li>
+                    <button id="btn-export-pdf" class="dropdown-item d-flex align-items-center gap-2 fw-semibold" style="color:#DC2626">
+                        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                    </button>
+                </li>
+            </ul>
+        </div>
         @endif
         <a href="{{ route('requests.create') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
             <i class="bi bi-plus-lg"></i> Nova Solicitação
@@ -172,7 +183,8 @@
     </div>
 </div>
 
-<div class="cs-card">
+{{-- Desktop Table View --}}
+<div class="cs-card d-none d-md-block">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -187,6 +199,7 @@
                     <th data-sort-col="urgencyOrder" style="{{ $thStyle }}">Urgência <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="statusLabel" style="{{ $thStyle }}">Status <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
                     <th data-sort-col="date" style="{{ $thStyle }}">Data <i class="sort-icon bi bi-chevron-expand ms-1" style="opacity:.3;font-size:10px"></i></th>
+                    <th style="{{ $thStyle }}">Nº Pedido</th>
                     <th style="{{ $thStyle }}">Pendências</th>
                 </tr>
             </thead>
@@ -194,12 +207,20 @@
                 @forelse($supplyRequests as $sr)
                 @php
                     $itemNames    = $sr->items->map(fn($i) => $i->item?->name ?? '')->implode(' ');
+                    $orderNumbers = $sr->items
+                        ->pluck('order_number')
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+                        ->values();
                     $searchData   = strtolower(implode(' ', [
                         $sr->code ?? '',
                         $sr->title,
                         $sr->costCenter->name,
                         $sr->user->name,
                         $itemNames,
+                        $orderNumbers->implode(' '),
                     ]));
                     $urgencyOrder = $sr->urgency->sortOrder();
                 @endphp
@@ -217,6 +238,7 @@
                     data-user-name="{{ $sr->user->name }}"
                     data-urgency-order="{{ $urgencyOrder }}"
                     data-status-label="{{ $sr->status->label() }}"
+                    data-orders="{{ $orderNumbers->implode(' ') }}"
                     data-pending-count="{{ $sr->getPendingItemsCount() }}">
                     <td>
                         <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600">
@@ -232,6 +254,17 @@
                     <td><span class="cs-badge {{ $sr->status->badgeClass() }}">{{ $sr->status->label() }}</span></td>
                     <td style="font-size:13px;color:#64748B">{{ $sr->created_at->format('d/m/Y') }}</td>
                     <td style="text-align:center" onclick="event.stopPropagation()">
+                        @if($orderNumbers->isNotEmpty())
+                            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">
+                                @foreach($orderNumbers as $pc)
+                                <span class="badge bg-light text-dark border" style="font-size:11px;font-weight:600;font-family:monospace">{{ $pc }}</span>
+                                @endforeach
+                            </div>
+                        @else
+                            <span style="color:#D1D9E6;font-size:12px">—</span>
+                        @endif
+                    </td>
+                    <td style="text-align:center" onclick="event.stopPropagation()">
                         @if($sr->hasPendingItems())
                             <a href="{{ route('requests.show', $sr) }}?highlight=pending"
                                class="cs-badge"
@@ -246,7 +279,7 @@
                 </tr>
                 @empty
                 <tr id="empty-row">
-                    <td colspan="8" class="text-center py-5" style="color:#94A3B8">
+                    <td colspan="9" class="text-center py-5" style="color:#94A3B8">
                         <i class="bi bi-clipboard-check" style="font-size:32px;display:block;margin-bottom:8px"></i>
                         Nenhuma solicitação encontrada.
                     </td>
@@ -261,6 +294,110 @@
         Nenhuma solicitação corresponde aos filtros.
     </div>
 </div>
+
+{{-- Mobile Card View --}}
+<div id="requests-cards-container" class="d-md-none">
+    @forelse($supplyRequests as $sr)
+    @php
+        $itemNames    = $sr->items->map(fn($i) => $i->item?->name ?? '')->implode(' ');
+        $orderNumbers = $sr->items
+            ->pluck('order_number')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->map(fn($num) => 'PC-' . str_pad($num, 4, '0', STR_PAD_LEFT))
+            ->values();
+        $searchData   = strtolower(implode(' ', [
+            $sr->code ?? '',
+            $sr->title,
+            $sr->costCenter->name,
+            $sr->user->name,
+            $itemNames,
+            $orderNumbers->implode(' '),
+        ]));
+        $urgencyOrder = $sr->urgency->sortOrder();
+    @endphp
+    <div class="mobile-request-card"
+         data-search="{{ $searchData }}"
+         data-status="{{ $sr->status->value }}"
+         data-urgency="{{ $sr->urgency->value }}"
+         data-cc="{{ $sr->cost_center_id }}"
+         data-user="{{ $sr->user_id }}"
+         data-date="{{ $sr->created_at->format('Y-m-d') }}"
+         data-code="{{ $sr->code ?? $sr->name }}"
+         data-title="{{ $sr->title }}"
+         data-cc-name="{{ $sr->costCenter->name }}"
+         data-user-name="{{ $sr->user->name }}"
+         data-urgency-order="{{ $urgencyOrder }}"
+         data-status-label="{{ $sr->status->label() }}"
+         data-orders="{{ $orderNumbers->implode(' ') }}"
+         data-pending-count="{{ $sr->getPendingItemsCount() }}"
+         onclick="window.location='{{ route('requests.show', $sr) }}'"
+         style="cursor:pointer">
+
+        {{-- Card Header --}}
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600;white-space:nowrap">
+                {{ $sr->code ?? '—' }}
+            </span>
+            <span class="cs-badge {{ $sr->urgency->badgeClass() }}" style="white-space:nowrap;margin-left:8px">
+                {{ $sr->urgency->label() }}
+            </span>
+        </div>
+
+        {{-- Card Title --}}
+        <h3 style="font-size:15px;font-weight:600;color:#0F172A;margin-bottom:10px;line-height:1.4;word-break:break-word">
+            {{ $sr->title }}
+        </h3>
+
+        {{-- Card Meta --}}
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#64748B;margin-bottom:12px">
+            <div>{{ $sr->costCenter->name }}</div>
+            @if($isBuyerOrAdmin)
+            <div>{{ $sr->user->name }}</div>
+            @endif
+            <div>{{ $sr->created_at->format('d/m/Y') }}</div>
+        </div>
+
+        {{-- Card Footer --}}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid #F1F5F9;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:120px">
+                <span class="cs-badge {{ $sr->status->badgeClass() }}" style="white-space:nowrap">
+                    {{ $sr->status->label() }}
+                </span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px">
+                @if($sr->hasPendingItems())
+                    <a href="{{ route('requests.show', $sr) }}?highlight=pending"
+                       onclick="event.stopPropagation()"
+                       class="cs-badge"
+                       style="background:#F59E0B;color:white;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;display:inline-block;white-space:nowrap"
+                       title="{{ $sr->getPendingItemsCount() }} item(ns) aguardando ação">
+                        ⚠ {{ $sr->getPendingItemsCount() }}
+                    </a>
+                @endif
+
+                @if($orderNumbers->isNotEmpty())
+                    <span style="font-size:11px;color:#94A3B8;white-space:nowrap">
+                        {{ $orderNumbers->count() }} pedido(s)
+                    </span>
+                @endif
+            </div>
+        </div>
+    </div>
+    @empty
+    <div id="empty-row-mobile" class="text-center py-5" style="color:#94A3B8">
+        <i class="bi bi-clipboard-check" style="font-size:32px;display:block;margin-bottom:8px"></i>
+        Nenhuma solicitação encontrada.
+    </div>
+    @endforelse
+
+    <div id="no-results-mobile" class="text-center py-5" style="display:none;color:#94A3B8">
+        <i class="bi bi-search" style="font-size:32px;display:block;margin-bottom:8px"></i>
+        Nenhuma solicitação corresponde aos filtros.
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -270,16 +407,80 @@
     @media (max-width: 767px) {
         #f-filters-card { background: none; border: none; box-shadow: none; padding: 0; }
     }
+
+    /* Mobile Card Styles */
+    #requests-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0;
+    }
+
+    .mobile-request-card {
+        background: white;
+        border: 1px solid #E2E9F4;
+        border-radius: 10px;
+        padding: 16px;
+        transition: all 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-request-card:active {
+        background-color: #F5F8FF;
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Improve readability on very small screens */
+    @media (max-width: 374px) {
+        .mobile-request-card {
+            padding: 12px;
+        }
+        .mobile-request-card h3 {
+            font-size: 14px !important;
+        }
+    }
+
+    /* Touch target size improvements */
+    @media (max-width: 768px) {
+        .cs-badge {
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .form-check-input {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Improve dropdown responsiveness */
+        .dropdown-menu {
+            min-width: calc(100vw - 40px) !important;
+            max-width: calc(100vw - 40px) !important;
+        }
+
+        /* Search bar responsive */
+        div[style*="max-width:600px"] {
+            max-width: 100% !important;
+        }
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
 (function () {
-    const tbody    = document.getElementById('requests-tbody');
-    const noRes    = document.getElementById('no-results');
-    const clearBtn = document.getElementById('f-clear');
-    const rows     = Array.from(tbody.querySelectorAll('tr[data-search]'));
+    const tbody         = document.getElementById('requests-tbody');
+    const noRes         = document.getElementById('no-results');
+    const cardsContainer = document.getElementById('requests-cards-container');
+    const noResMobile   = document.getElementById('no-results-mobile');
+    const emptyRowMobile = document.getElementById('empty-row-mobile');
+    const clearBtn      = document.getElementById('f-clear');
+    const rows          = Array.from(tbody?.querySelectorAll('tr[data-search]') || []);
+    const cards         = Array.from(cardsContainer?.querySelectorAll('.mobile-request-card') || []);
 
     const inputs = {
         q:         document.getElementById('f-q'),
@@ -308,13 +509,13 @@
 
     function updateUrlParams() {
         const params = new URLSearchParams();
-        if (inputs.q.value) params.append('q', inputs.q.value);
-        if (inputs.urgency.value) params.append('urgency', inputs.urgency.value);
-        if (inputs.cc.value) params.append('cost_center_id', inputs.cc.value);
-        if (inputs.user.value) params.append('user_id', inputs.user.value);
-        if (inputs.from.value) params.append('from', inputs.from.value);
-        if (inputs.to.value) params.append('to', inputs.to.value);
-        if (inputs.hasPending.checked) params.append('has_pending', 'true');
+        if (inputs.q?.value) params.append('q', inputs.q.value);
+        if (inputs.urgency?.value) params.append('urgency', inputs.urgency.value);
+        if (inputs.cc?.value) params.append('cost_center_id', inputs.cc.value);
+        if (inputs.user?.value) params.append('user_id', inputs.user.value);
+        if (inputs.from?.value) params.append('from', inputs.from.value);
+        if (inputs.to?.value) params.append('to', inputs.to.value);
+        if (inputs.hasPending?.checked) params.append('has_pending', 'true');
         document.querySelectorAll('.f-status-cb:checked').forEach(function(cb) {
             params.append('status[]', cb.value);
         });
@@ -326,9 +527,9 @@
     // Restore filters from URL params on page load
     function restoreFiltersFromUrl() {
         const params = getFilterParams();
-        if (params.q) inputs.q.value = params.q;
+        if (params.q && inputs.q) inputs.q.value = params.q;
 
-        if (params.urgency) {
+        if (params.urgency && inputs.urgency) {
             inputs.urgency.value = params.urgency;
             const urgencyLabel = document.querySelector('.f-urgency-opt[data-value="' + params.urgency + '"]');
             if (urgencyLabel) {
@@ -336,7 +537,7 @@
             }
         }
 
-        if (params.cc) {
+        if (params.cc && inputs.cc) {
             inputs.cc.value = params.cc;
             const ccLabel = document.querySelector('.f-cc-opt[data-value="' + params.cc + '"]');
             if (ccLabel) {
@@ -344,7 +545,7 @@
             }
         }
 
-        if (params.user) {
+        if (params.user && inputs.user) {
             inputs.user.value = params.user;
             const userLabel = document.querySelector('.f-user-opt[data-value="' + params.user + '"]');
             if (userLabel) {
@@ -352,9 +553,9 @@
             }
         }
 
-        if (params.from) inputs.from.value = params.from;
-        if (params.to) inputs.to.value = params.to;
-        if (params.hasPending) inputs.hasPending.checked = true;
+        if (params.from && inputs.from) inputs.from.value = params.from;
+        if (params.to && inputs.to) inputs.to.value = params.to;
+        if (params.hasPending && inputs.hasPending) inputs.hasPending.checked = true;
 
         // Restore status checkboxes
         if (params.status.length) {
@@ -498,6 +699,8 @@
                 dayBtn.style.cssText = 'background:none;border:1px solid #e0e0e0;border-radius:4px;padding:6px;cursor:pointer;font-size:12px';
                 dayBtn.addEventListener('mouseenter', function() { this.style.background = '#f0f0f0'; });
                 dayBtn.addEventListener('mouseleave', function() { this.style.background = 'none'; });
+                dayBtn.addEventListener('touchstart', function(e) { this.style.background = '#f0f0f0'; });
+                dayBtn.addEventListener('touchend', function(e) { this.style.background = 'none'; });
                 dayBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
@@ -563,7 +766,10 @@
         const hasFilter = q || selStatuses.length || urgency || cc || user || from || to || hasPending;
         clearBtn.style.display = hasFilter ? '' : 'none';
 
-        let visible = 0;
+        let visibleDesktop = 0;
+        let visibleMobile = 0;
+
+        // Filter desktop table rows
         rows.forEach(function (row) {
             const matchQ       = !terms.length || terms.every(t => row.dataset.search.includes(t));
             const matchStatus  = !selStatuses.length || selStatuses.includes(row.dataset.status);
@@ -576,15 +782,35 @@
 
             const show = matchQ && matchStatus && matchUrgency && matchCc && matchUser && matchFrom && matchTo && matchPending;
             row.style.display = show ? '' : 'none';
-            if (show) visible++;
+            if (show) visibleDesktop++;
         });
 
-        noRes.style.display = (rows.length > 0 && visible === 0) ? 'block' : 'none';
+        // Filter mobile cards
+        cards.forEach(function (card) {
+            const matchQ       = !terms.length || terms.every(t => card.dataset.search.includes(t));
+            const matchStatus  = !selStatuses.length || selStatuses.includes(card.dataset.status);
+            const matchUrgency = !urgency || card.dataset.urgency === urgency;
+            const matchCc      = !cc      || card.dataset.cc      === cc;
+            const matchUser    = !user    || card.dataset.user    === user;
+            const matchFrom    = !from    || card.dataset.date    >= from;
+            const matchTo      = !to      || card.dataset.date    <= to;
+            const matchPending = !hasPending || parseInt(card.dataset.pendingCount || 0) > 0;
+
+            const show = matchQ && matchStatus && matchUrgency && matchCc && matchUser && matchFrom && matchTo && matchPending;
+            card.style.display = show ? '' : 'none';
+            if (show) visibleMobile++;
+        });
+
+        // Show/hide "no results" messages
+        if (noRes) noRes.style.display = (rows.length > 0 && visibleDesktop === 0) ? 'block' : 'none';
+        if (noResMobile) noResMobile.style.display = (cards.length > 0 && visibleMobile === 0) ? 'block' : 'none';
+        if (emptyRowMobile) emptyRowMobile.style.display = (cards.length === 0) ? 'block' : 'none';
+
         updateUrlParams();
     }
 
     // Status: checkboxes no dropdown
-    document.querySelectorAll('.f-status-cb').forEach(function (cb) {
+    document.querySelectorAll('.f-status-cb')?.forEach(function (cb) {
         cb.addEventListener('change', function () { updateStatusLabel(); filter(); });
     });
 
@@ -650,7 +876,21 @@
                 return sortDir === 'asc' ? cmp : -cmp;
             });
 
-            rows.forEach(function (row) { tbody.appendChild(row); });
+            // Sort desktop table rows
+            if (tbody) rows.forEach(function (row) { tbody.appendChild(row); });
+
+            // Sort mobile cards with same criteria
+            cards.sort(function (a, b) {
+                const aVal = a.dataset[col] || '';
+                const bVal = b.dataset[col] || '';
+                const cmp  = numericCols.includes(col)
+                    ? parseFloat(aVal || 0) - parseFloat(bVal || 0)
+                    : aVal.localeCompare(bVal, 'pt-BR', { numeric: true, sensitivity: 'base' });
+                return sortDir === 'asc' ? cmp : -cmp;
+            });
+
+            if (cardsContainer) cards.forEach(function (card) { cardsContainer.appendChild(card); });
+
             filter();
         });
     });

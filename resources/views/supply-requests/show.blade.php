@@ -98,7 +98,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h6 class="fw-semibold mb-0" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748B">Itens</h6>
         @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+        <button type="button" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#addItemModal">
             <i class="bi bi-plus"></i> Adicionar Item
         </button>
         @endif
@@ -109,97 +109,270 @@
         @csrf
     @endif
 
+    {{-- Tabela responsiva (desktop/mobile via CSS) --}}
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Item</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Qtd.</th>
-                    <th style="font-size:12px;color:#64748B;font-weight:600">Nº PC</th>
-                    <th style="width:36px"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($supplyRequest->items as $item)
-                <tr data-item-row="{{ $item->id }}" @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
-                    <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="cs-badge {{ $item->status->badgeClass() }}" id="badge-{{ $item->id }}">{{ $item->status->label() }}</span>
-                            @can('updateStatus', $item)
-                            @if($item->status->nextStatus())
-                            <button type="button"
-                                    id="btn-advance-{{ $item->id }}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    style="font-size:11px;padding:2px 8px"
-                                    onclick="stageAdvance({{ $item->id }}, {{ $item->status->value === 'quoting' ? 'true' : 'false' }}, @js($item->item->name), @js($item->status->nextStatus()->label()))">
-                                <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
-                            </button>
-                            <button type="button"
-                                    id="btn-unstage-{{ $item->id }}"
-                                    class="btn btn-sm btn-outline-warning d-none"
-                                    style="font-size:11px;padding:2px 8px"
-                                    onclick="unstage({{ $item->id }})">
-                                <i class="bi bi-x"></i>
-                            </button>
+        <table class="table align-middle mb-0" id="items-show-table" style="display:table">
+                <thead class="table-light">
+                    <tr>
+                        <th style="font-size:12px;color:#64748B;font-weight:600">Item</th>
+                        <th style="font-size:12px;color:#64748B;font-weight:600">Status</th>
+                        <th style="font-size:12px;color:#64748B;font-weight:600">Quantidade</th>
+                        <th style="font-size:12px;color:#64748B;font-weight:600">Nº PC</th>
+                        <th style="width:36px"></th>
+                    </tr>
+                </thead>
+                <tbody style="display:table-row-group">
+                    @foreach($supplyRequest->items as $item)
+                    <tr data-item-row="{{ $item->id }}" @if($item->status === \App\Enums\ItemStatus::Cancelled) style="opacity:.55" @endif>
+                        <td style="font-size:14px;font-weight:500">{{ $item->item->name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="cs-badge {{ $item->status->badgeClass() }}" id="badge-{{ $item->id }}">{{ $item->status->label() }}</span>
+                                @can('updateStatus', $item)
+                                @if($item->status->nextStatus())
+                                <button type="button"
+                                        id="btn-advance-{{ $item->id }}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        style="font-size:11px;padding:2px 8px"
+                                        onclick="stageAdvance({{ $item->id }}, {{ $item->status->value === 'quoting' ? 'true' : 'false' }}, @js($item->item->name), @js($item->status->nextStatus()->label()))">
+                                    <i class="bi bi-arrow-right me-1"></i>{{ $item->status->nextStatus()->label() }}
+                                </button>
+                                <button type="button"
+                                        id="btn-unstage-{{ $item->id }}"
+                                        class="btn btn-sm btn-outline-warning d-none"
+                                        style="font-size:11px;padding:2px 8px"
+                                        onclick="unstage({{ $item->id }})">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                                @endif
+                                @endcan
+                            </div>
+                            @if($item->cancel_reason)
+                            <div style="font-size:11px;color:#94A3B8;margin-top:2px">{{ $item->cancel_reason }}</div>
                             @endif
-                            @endcan
-                        </div>
-                        @if($item->cancel_reason)
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px">{{ $item->cancel_reason }}</div>
-                        @endif
-                    </td>
-                    <td style="font-size:13px;color:#374151">
-                        @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
-                        <div class="d-flex align-items-center gap-1">
-                            <input type="number" step="0.001" min="0.001" required
-                                   name="items[{{ $item->id }}][quantity]"
-                                   value="{{ $item->quantity }}"
-                                   class="form-control form-control-sm" style="width:80px;font-size:12px">
-                            <input type="text" maxlength="20" placeholder="un."
-                                   name="items[{{ $item->id }}][unit]"
-                                   value="{{ $item->unit }}"
-                                   class="form-control form-control-sm" style="width:55px;font-size:12px">
-                            <input type="hidden"
-                                   name="items[{{ $item->id }}][notes]"
-                                   value="{{ $item->notes }}">
-                        </div>
-                        @else
-                            {{ $item->formattedQuantity() }}
-                            @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
-                        @endif
-                    </td>
-                    <td style="font-size:13px">
-                        @if($item->order_number)
-                        <span style="font-family:monospace;font-weight:600;color:#0369A1">
-                            {{ $item->formattedOrderNumber() }}
-                        </span>
-                        @else
-                        <span style="color:#CBD5E1">—</span>
-                        @endif
-                    </td>
-                    <td>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                style="padding:3px 8px;font-size:12px"
-                                data-bs-toggle="offcanvas"
-                                data-bs-target="#item-panel-{{ $item->id }}"
-                                title="Ver detalhes">
-                            <i class="bi bi-sliders2"></i>
-                        </button>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        </td>
+                        <td style="font-size:13px;color:#374151">
+                            @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" step="0.001" min="0.001" required
+                                       name="items[{{ $item->id }}][quantity]"
+                                       value="{{ $item->quantity }}"
+                                       class="form-control form-control-sm" style="width:80px;font-size:12px">
+                                <input type="text" maxlength="20" placeholder="un."
+                                       name="items[{{ $item->id }}][unit]"
+                                       value="{{ $item->unit }}"
+                                       class="form-control form-control-sm" style="width:55px;font-size:12px">
+                                <input type="hidden"
+                                       name="items[{{ $item->id }}][notes]"
+                                       value="{{ $item->notes }}">
+                            </div>
+                            @else
+                                {{ $item->formattedQuantity() }}
+                                @if($item->unit)<span style="color:#94A3B8;font-size:12px"> {{ $item->unit }}</span>@endif
+                            @endif
+                        </td>
+                        <td style="font-size:13px">
+                            @if($item->order_number)
+                            <span style="font-family:monospace;font-weight:600;color:#0369A1">
+                                {{ $item->formattedOrderNumber() }}
+                            </span>
+                            @else
+                            <span style="color:#CBD5E1">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    style="padding:3px 8px;font-size:12px"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#item-panel-{{ $item->id }}"
+                                    title="Ver detalhes">
+                                <i class="bi bi-sliders2"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    {{-- Botão adicionar item mobile --}}
+    @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
+    <button type="button" class="btn btn-outline-primary w-100 d-block d-md-none mt-3" data-bs-toggle="modal" data-bs-target="#addItemModal" style="border-style:dashed;border-radius:10px;padding:12px">
+        <i class="bi bi-plus-lg me-2"></i>Adicionar Item
+    </button>
+    @endif
 
     @if(!in_array($supplyRequest->status->value, ['completed', 'cancelled']))
     </form>
     @endif
 
 </div>
+
+@push('styles')
+<style>
+/* Mobile: Layout limpo e direto */
+@media (max-width: 767px) {
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    #items-show-table {
+        display: block !important;
+        border: none;
+        width: 100%;
+    }
+
+    #items-show-table thead {
+        display: none !important;
+    }
+
+    #items-show-table tbody {
+        display: block !important;
+    }
+
+    /* Card com grid: nome+botão na L1, resto em linhas separadas */
+    #items-show-table tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-auto-rows: auto;
+        gap: 8px;
+        border: 1px solid #E2E9F4;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #F8FAFC;
+        width: 100%;
+        opacity: 1 !important;
+    }
+
+    #items-show-table td {
+        padding: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        font-size: 13px;
+    }
+
+    /* L1: Nome (coluna 1) */
+    #items-show-table td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+        font-weight: 600;
+        font-size: 14px;
+        color: #1E293B;
+        display: flex;
+        align-items: center;
+    }
+
+    #items-show-table td:nth-child(1):before {
+        display: none !important;
+    }
+
+    /* L1: Botão Ajuste (coluna 2, mesma linha do nome) */
+    #items-show-table td:nth-child(5) {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    #items-show-table td:nth-child(5):before {
+        display: none !important;
+    }
+
+    #items-show-table td:nth-child(5) button {
+        width: 32px;
+        height: 32px;
+        padding: 4px 6px !important;
+        font-size: 12px !important;
+    }
+
+    /* L2: Status + Próximo Status (coluna 1-2, row 2) */
+    #items-show-table td:nth-child(2) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    #items-show-table td:nth-child(2):before {
+        display: none !important;
+    }
+
+    #items-show-table td:nth-child(2) .cs-badge {
+        flex: 0 0 auto;
+        margin: 0;
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    #items-show-table td:nth-child(2) button {
+        flex: 1 1 auto;
+        font-size: 11px;
+        padding: 2px 8px;
+        height: 28px;
+        min-width: 100px;
+    }
+
+    /* L3: Quantidade + Unidade (coluna 1-2, row 3) */
+    #items-show-table td:nth-child(3) {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        width: 100%;
+    }
+
+    #items-show-table td:nth-child(3) .d-flex {
+        display: flex !important;
+        gap: 6px !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    #items-show-table td:nth-child(3):before {
+        display: none !important;
+    }
+
+    #items-show-table td:nth-child(3) input {
+        flex: 1 1 auto !important;
+        font-size: 12px !important;
+        padding: 6px 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+
+    #items-show-table td:nth-child(3) input[type="number"] {
+        flex: 1.5 1 0 !important;
+    }
+
+    #items-show-table td:nth-child(3) input[type="text"] {
+        flex: 1 1 0 !important;
+    }
+
+    /* L4: Número do Pedido (coluna 1-2, row 4) */
+    #items-show-table td:nth-child(4) {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        display: block;
+        font-family: monospace;
+        font-weight: 600;
+        color: #0369A1;
+        font-size: 11px;
+    }
+
+    #items-show-table td:nth-child(4):before {
+        display: none !important;
+    }
+}
+</style>
+@endpush
 
 @push('modals')
 {{-- Item offcanvases — fora do .cs-content para evitar stacking-context do transform da animação --}}

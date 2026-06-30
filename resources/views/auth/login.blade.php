@@ -171,6 +171,30 @@
             margin-bottom: 20px;
         }
 
+        .input-group {
+            transition: all .3s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        .password-toggle-btn {
+            border: 1.5px solid #D1D9E6;
+            background: #fff;
+            border-radius: 11px;
+            padding: 12px 14px;
+            color: #94A3B8;
+            cursor: pointer;
+            transition: border-color .3s, color .3s, transform .3s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        .password-toggle-btn:hover {
+            color: #3B82F6;
+            border-color: #3B82F6;
+        }
+
+        .password-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+
         .form-label {
             display: block;
             font-size: 11.5px;
@@ -188,7 +212,9 @@
             border-radius: 11px 0 0 11px;
             color: #94A3B8;
             padding: 0 14px;
-            transition: border-color .2s, background .2s, color .2s;
+            transition: border-color .3s cubic-bezier(.34,1.56,.64,1),
+                        background .3s cubic-bezier(.34,1.56,.64,1),
+                        color .3s cubic-bezier(.34,1.56,.64,1);
         }
 
         .form-control {
@@ -198,7 +224,9 @@
             font-size: 14px;
             color: #0F172A;
             background: #fff;
-            transition: border-color .2s, box-shadow .2s;
+            transition: border-color .3s cubic-bezier(.34,1.56,.64,1),
+                        box-shadow .3s cubic-bezier(.34,1.56,.64,1),
+                        transform .3s cubic-bezier(.34,1.56,.64,1);
         }
 
         .input-group .form-control {
@@ -207,9 +235,9 @@
         }
 
         .form-control:focus {
-            border-color: #3B82F6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,.13);
+            box-shadow: 0 8px 24px rgba(59,130,246,.2);
             outline: none;
+            transform: scale(1.02);
         }
 
         .input-group:focus-within .input-group-text {
@@ -386,14 +414,37 @@
                             <a href="{{ route('password.request') }}" class="link-forgot">Esqueceu a senha?</a>
                         @endif
                     </div>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                        <input id="password" type="password" name="password"
-                               class="form-control"
-                               placeholder="••••••••"
-                               required>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <div class="input-group" style="flex:1">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input id="password" type="password" name="password"
+                                   class="form-control"
+                                   value="{{ old('password') }}"
+                                   placeholder="Senha"
+                                   required>
+                        </div>
+                        <button type="button" id="toggle-password" class="password-toggle-btn"
+                                onclick="togglePasswordVisibility()">
+                            <i id="password-icon" class="bi bi-eye"></i>
+                        </button>
                     </div>
                 </div>
+
+                <script>
+                function togglePasswordVisibility() {
+                    const passwordInput = document.getElementById('password');
+                    const passwordIcon = document.getElementById('password-icon');
+
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        passwordIcon.className = 'bi bi-eye-slash';
+                    } else {
+                        passwordInput.type = 'password';
+                        passwordIcon.className = 'bi bi-eye';
+                    }
+                }
+                </script>
+
 
                 <div class="field-wrap s3" style="margin-bottom:28px">
                     <div class="form-check">
