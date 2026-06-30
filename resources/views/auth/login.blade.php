@@ -172,11 +172,7 @@
         }
 
         .input-group {
-            transition: transform .3s cubic-bezier(.34,1.56,.64,1);
-        }
-
-        .input-group:focus-within {
-            transform: scale(1.02);
+            transition: all .3s cubic-bezier(.34,1.56,.64,1);
         }
 
         .password-toggle-btn {
@@ -225,7 +221,7 @@
             border: 1.5px solid #D1D9E6;
             border-radius: 11px;
             padding: 12px 15px;
-            font-size: 14px;
+            font-size: 16px;
             color: #0F172A;
             background: #fff;
             transition: border-color .3s cubic-bezier(.34,1.56,.64,1),
@@ -241,6 +237,7 @@
         .form-control:focus {
             box-shadow: 0 8px 24px rgba(59,130,246,.2);
             outline: none;
+            transform: scale(1.02);
         }
 
         .input-group:focus-within .input-group-text {
