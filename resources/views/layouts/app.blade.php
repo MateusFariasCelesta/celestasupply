@@ -526,11 +526,12 @@
 
         /* ── Responsive ── */
         @media (max-width: 767px) {
-            .cs-navbar    { padding: 0 16px; gap: 8px; }
+            .cs-navbar    { display: none; }
             .cs-nav       { display: none; }
             .cs-user-info { display: none; }
-            .cs-burger    { display: flex; }
-            .cs-content   { padding: 20px 16px; }
+            .cs-burger    { display: none; }
+            .cs-mobile-menu { display: none; }
+            .cs-content   { padding: 20px 16px 80px; }
             .cs-card      { padding: 16px; border-radius: 10px; }
             .cs-page-title { font-size: 18px; }
         }
@@ -664,6 +665,9 @@
 <main class="cs-content">
     @yield('content')
 </main>
+
+{{-- ── Bottom Navigation (Mobile) ── --}}
+<x-bottom-nav />
 
 {{-- Modals rendered outside .cs-content to avoid stacking-context issues with CSS animations --}}
 @stack('modals')

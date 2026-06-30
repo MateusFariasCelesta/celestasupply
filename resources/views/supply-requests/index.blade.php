@@ -7,12 +7,23 @@
     <h1 class="cs-page-title mb-0">Solicitações</h1>
     <div class="d-flex gap-2">
         @if($isBuyerOrAdmin)
-        <button id="btn-export-excel" class="btn btn-sm fw-semibold" style="background:#217346;color:#fff;border:none;border-radius:6px">
-            <i class="bi bi-file-earmark-excel me-1"></i>Excel
-        </button>
-        <button id="btn-export-pdf" class="btn btn-sm fw-semibold" style="background:#DC2626;color:#fff;border:none;border-radius:6px">
-            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-        </button>
+        <div class="dropdown">
+            <button class="btn btn-sm fw-semibold" type="button" id="btn-export-dropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:6px 12px">
+                <i class="bi bi-download me-1"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="btn-export-dropdown">
+                <li>
+                    <button id="btn-export-excel" class="dropdown-item d-flex align-items-center gap-2 fw-semibold" style="color:#217346">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </li>
+                <li>
+                    <button id="btn-export-pdf" class="dropdown-item d-flex align-items-center gap-2 fw-semibold" style="color:#DC2626">
+                        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                    </button>
+                </li>
+            </ul>
+        </div>
         @endif
         <a href="{{ route('requests.create') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
             <i class="bi bi-plus-lg"></i> Nova Solicitação
