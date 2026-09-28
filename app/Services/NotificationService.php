@@ -15,7 +15,7 @@ class NotificationService
 {
     private function buyersAddress(): string
     {
-        return env('MAIL_BUYERS_ADDRESS', config('mail.from.address'));
+        return config('mail.buyers_address') ?? config('mail.from.address');
     }
 
     public function notifySubmitted(SupplyRequest $sr): void
